@@ -1,0 +1,304 @@
+TASK 5 PLAN — HarborFlow Port Intelligence Console: Find Port Calls by Month
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-27
+
+================================================================
+1. SCOPE AND EVIDENCE
+================================================================
+
+Scope is Task 5 only — “Find port calls by month” (menu option 5). This is a
+planning document, not an implementation. File-scope statements in this
+section describe the original Task 5 drafting pass. The coordinated
+revision edits planning documents only; it does not modify application
+code, source data, test-ledger.csv, or readme.txt. No project commands,
+tests, or builds were run.
+
+Authoritative scope source: C:\Users\conda\Downloads\DIT014 HT26
+Assignment 2 - HarborFlow Port Intelligence Console.pdf, Task 5 text on PDF
+page 7 (the heading and business outcome begin at the bottom of page 6).
+The requirements transcribed below are limited to Task 5; other tasks are
+mentioned only where a shared interface or existing requirement affects
+this plan.
+
+Read-only supporting evidence:
+- dataset\DATA-DICTIONARY.md: port_calls.csv header and field meanings; IDs
+  and dates are strings, with dates in ISO YYYY-MM-DD form.
+- dataset\port_calls.csv: six supplied call rows, including five valid
+  dates and the intentional invalid date 2026-02-30.
+- START-HERE.txt: preserve the supplied directory structure, use relative
+  dataset paths, keep supplied data read-only, and do not hard-code supplied
+  records.
+- test-ledger.csv: the Month / Invalid source date row specifies input
+  Choose month 10 and expected result Bad source row skipped and valid calls
+  shown; its status is Not run. It was read-only; this plan does not
+  treat the expected result as completed test evidence.
+- TASK-0 through TASK-4-PLAN.txt: neighboring-plan context and the shared
+  interface contracts, read-only.
+
+Review is optional internal workflow, not an assignment requirement or
+implementation gate. The integrated contract and this plan's Section 7
+state the current resolved policies; no test execution or approval is
+claimed.
+
+================================================================
+2. TASK 5 REQUIREMENT SUMMARY (from the assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Help berth planners review seasonal workload across all
+scheduled calls.
+
+Task 5 requirement text:
+
+Ask for a month as an integer from 1 to 12. For non-integer or out-of-range
+input, print “Error - Enter a month from 1 to 12.” and repeat only the month
+prompt. Read port_calls.csv, resolve each vessel name, and print calls in
+that month sorted by arrival_date and then vessel name. Report and skip
+invalid dates. If a row refers to an unknown vessel_id, report and skip
+that row. If no valid calls match, print “No port calls found.”
+
+Exact example interaction/output from the assignment:
+  Month (1-12): 10
+  Port calls in October:
+  - 02 October 2026 | Baltic Pioneer | CPH | HFL-CPH-2017
+  - 18 October 2026 | Nordic Relay | GOT | HFL-GOT-2048
+  - 18 October 2026 | Skagerrak Star | AAR | HFL-AAR-2071
+
+Confirmed literal strings and formats:
+- Prompt: “Month (1-12): ”
+- Invalid input: “Error - Enter a month from 1 to 12.”
+- Empty result: “No port calls found.”
+- Heading shown for the example month: “Port calls in October:”
+- Each shown call: “- {DD Month YYYY} | {vessel name} | {port_code} |
+  {call_id}”; the example uses a zero-padded day (“02”), single spaces
+  around each vertical bar, and this exact field order.
+- Sort order is arrival_date ascending, then vessel name. The example's
+  calls on 18 October put Nordic Relay before Skagerrak Star, demonstrating
+  the secondary-name ordering for that same-date pair.
+
+The PDF does NOT specify exact diagnostic wording or formatting for an
+invalid date row or an unknown vessel_id row. It requires that each such
+row be reported and skipped. Use the stable project diagnostic convention
+in INTEGRATED-CONTRACT-PLAN.md §3 and this plan's §7; this wording remains
+a project convention, not a PDF-mandated string.
+
+================================================================
+3. PROPOSED DESIGN AND MODULE RESPONSIBILITIES
+================================================================
+
+Use the shared loading, root-path, and error contracts in
+INTEGRATED-CONTRACT-PLAN.md while preserving Task 5's requirements and
+exact output strings above. Task-specific helper names below are
+descriptive implementation proposals.
+
+data_access.py:
+- Reuse the shared `load_port_calls(path) -> LoadResult[PortCall]` loader
+  in INTEGRATED-CONTRACT-PLAN.md. It reads CSV rows and retains call_id, vessel_id,
+  port_code, and arrival_date. Keep arrival_date as source text here so
+  Task 5 can validate each row and report/skip bad dates individually
+  rather than letting one bad date invalidate the report. The intended path
+  is relative to the project root, e.g. dataset/port_calls.csv, never an
+  absolute path tied to one student's computer.
+- Reuse the shared vessel `LoadResult` from Task 1 to obtain valid vessel
+  records. Build an in-memory vessel_id-to-name lookup from
+  those records; Task 5 does not need to print the inventory or duplicate
+  vessel-file parsing/validation.
+- Keep file reading separate from the date filtering, join, sorting, and
+  output formatting. The CSV loader must not silently turn an invalid date
+  into a valid one or discard a row that the service is required to report.
+
+operations.py:
+- parse_month(text) -> int | raises ValueError: parse and range-check the
+  entered month (1 through 12). The caller handles both non-integer text
+  and numeric values outside the range through the single exact error
+  message, then asks only for the month again. Do not parse a date from the
+  user's input; the user supplies a month number only.
+- collect_month_calls(month, call_rows, vessels) -> (ordered_calls,
+  diagnostics) (proposed): for each CSV row, parse the entire arrival_date
+  as a real YYYY-MM-DD calendar date; report and exclude an invalid date.
+  Resolve vessel_id against the valid vessel records; report and exclude a
+  row whose id has no matching vessel. Include only rows whose parsed
+  date.month equals the selected month. Each accepted result needs the
+  parsed date, vessel name, port_code, and call_id. Sort accepted results
+  by arrival_date ascending, casefolded vessel name, and call_id as the
+  final deterministic tiebreaker; the final key is the project policy in
+  Section 7 and does not change the PDF's required date/name ordering.
+  Keep row-level diagnostics identifiable to the caller and report them
+  using the stable project convention; do not silently skip them.
+- format_month_heading(month) and format_call_line(call) (or equivalent
+  single-purpose formatting): derive the full month name from the selected
+  month, and format each call with the observed `DD Month YYYY` date form
+  and exact separator spacing from the PDF example. The date text should be
+  formatted with a zero-padded day, matching “02 October 2026”; do not
+  strip that leading zero.
+- Keep operations over already-loaded data free of filesystem I/O where
+  practical, so sorting and error branches can be unit-tested with in-memory
+  rows and vessel records.
+
+main.py:
+- In the selection == 5 branch, ask “Month (1-12): ” until parse_month
+  succeeds. On each ValueError, print exactly “Error - Enter a month from
+  1 to 12.” and repeat only that prompt; do not print the menu or ask for
+  another field inside the retry loop.
+- After a valid month, load calls and valid vessel records using the
+  shared data-access functions; collect the result and row-level
+  diagnostics. Print a diagnostic for each invalid-date and unknown-vessel
+  row, skipping each from results. Use the stable diagnostic convention in
+  INTEGRATED-CONTRACT-PLAN.md because the PDF does not provide exact wording.
+- If no valid calls remain for the selected month, print exactly “No port
+  calls found.” Otherwise print the month heading and sorted call lines in
+  the format shown in Section 2. Diagnostics must not prevent later valid
+  rows from appearing.
+- Return to the existing outer console loop when the service finishes; do
+  not change the shell's menu, other options, or closing behavior as part of
+  this task.
+
+No other task's rules are imported into this feature: this service filters
+by the month component of each valid call date (the prompt has no year),
+not by a user-specified year or reference date. It joins vessel names from
+vessels data using vessel_id; it does not assume call_id or vessel_id is
+encoded in a filename.
+
+================================================================
+4. TESTABLE ACCEPTANCE CASES USING THE SUPPLIED DATA
+================================================================
+
+[ ] Assignment example / normal October case: enter 10. The supplied rows
+    for October are HFL-CPH-2017 (2026-10-02, VSL-001, CPH), HFL-GOT-2048
+    (2026-10-18, VSL-002, GOT), and HFL-AAR-2071 (2026-10-18, VSL-003,
+    AAR). Resolve names using vessel records, report and exclude the invalid-
+    date row HFL-BAD-9999 (2026-02-30), and still produce exactly:
+      Port calls in October:
+      - 02 October 2026 | Baltic Pioneer | CPH | HFL-CPH-2017
+      - 18 October 2026 | Nordic Relay | GOT | HFL-GOT-2048
+      - 18 October 2026 | Skagerrak Star | AAR | HFL-AAR-2071
+    This verifies the exact example format, date ordering, equal-date
+    secondary sort by vessel name, and the test-ledger.csv Month case
+    (Choose month 10 / Bad source row skipped and valid calls shown). Its
+    status remains Not run; this is a required future check, not a claim
+    that it passed. Use the stable project diagnostic convention in
+    INTEGRATED-CONTRACT-PLAN.md §3 and Section 7; the PDF does not mandate
+    exact wording.
+    The prompt line is exactly `Month (1-12): `.
+
+[ ] Input validation and retry scope: supply non-integer text, 0, and 13,
+    followed by 10. Each invalid entry prints exactly “Error - Enter a
+    month from 1 to 12.” and prompts only “Month (1-12): ” again; after 10
+    it proceeds to the October result. Also verify an integer boundary
+    input of 1 and 12 is accepted (whether those months contain rows is a
+    separate empty-result check).
+
+[ ] November ordering from real rows: month 11 includes HFL-OSL-2090
+    (2026-11-05, VSL-002, OSL) before HFL-GOT-2105 (2026-11-12, VSL-001,
+    GOT). Their resolved names are Nordic Relay and Baltic Pioneer,
+    respectively. Verify ascending arrival date controls the result before
+    the name key; output call lines should be:
+      - 05 November 2026 | Nordic Relay | OSL | HFL-OSL-2090
+      - 12 November 2026 | Baltic Pioneer | GOT | HFL-GOT-2105
+    The PDF does not show a November heading; if the example's heading
+    convention is followed, it is “Port calls in November:”.
+
+[ ] Invalid supplied date: month 2 encounters HFL-BAD-9999 with source date
+    “2026-02-30”. It is not a valid calendar date and must be reported and
+    excluded even though its month substring is 02. No valid February call
+    remains in the supplied data, so after the row diagnostic the service
+    prints exactly “No port calls found.” It must not crash, reinterpret
+    the impossible date, or include this call in the list. The diagnostic's
+    exact wording is intentionally not asserted because the PDF does not
+    specify it.
+
+[ ] Unknown vessel_id: construct an isolated in-memory CSV-row fixture
+    with a valid ISO arrival_date in the chosen month and a vessel_id absent
+    from the valid vessel lookup. The row must be reported and skipped; it
+    must not appear in the list or crash name resolution. When it is the
+    only fixture row, print “No port calls found.” Exact report wording for
+    this diagnostic is not specified in the PDF. Do not add test data to the
+    supplied dataset.
+
+[ ] Multiple invalid rows do not suppress valid rows: combine (in an
+    isolated fixture) a malformed-date row or unknown-vessel row with a
+    valid matching row; report/skip the bad row(s), and still include the
+    valid call in correct order. For a row with both defects, report only
+    the invalid-date diagnostic: date validation precedes vessel lookup,
+    and the contract specifies one primary diagnostic per rejected row.
+
+[ ] Stable task scope and alternate data: read all calls from the supplied
+    CSV at runtime; do not hard-code the six current records, month-10
+    output, vessel names, or IDs. Verify that filtering uses each full
+    parsed date's month and works with valid dates from any year, because
+    Task 5 accepts a month number but no year. Do not write or repair any
+    dataset file or change test-ledger.csv.
+
+[ ] Shared console integration: option 5 is reachable from the existing
+    menu and returns to the menu when the report completes; invalid month
+    retries stay within the month prompt loop. Do not alter menu text,
+    options 0-4 or 6-10, or the option-10 close behavior.
+
+The page-11 acceptance campaign lists general areas (Files, Relationships,
+Export, Regex, Sequence, Weather, Search). Separately, test-ledger.csv has
+an explicit Month / Invalid source date row with input Choose month 10 and
+expected result Bad source row skipped and valid calls shown (status Not
+run). The October case above maps directly to that row and to the PDF's
+invalid-date requirement. This plan does not mark the row passed or modify
+the ledger.
+
+================================================================
+5. SHARED-INTERFACE AND REUSE RISKS
+================================================================
+
+- Use `load_port_calls(path) -> LoadResult[PortCall]` and
+  `load_vessels(directory) -> LoadResult[Vessel]` from
+  INTEGRATED-CONTRACT-PLAN.md. Keep arrival_date as source text and apply
+  Task 5's per-row validation in operations; do not introduce another CSV
+  parser or vessel-file loader.
+- Important formatting mismatch: TASK-2-PLAN.txt proposes a date formatter
+  that removes a leading zero from the day. Task 5's own exact example
+  prints “02 October 2026” with a leading zero. Do not reuse Task 2's
+  presentation formatter unchanged. Date parsing can be shared, but output
+  formatting must preserve Task 5's demonstrated two-digit day.
+- Task 8 also consumes the shared port-call rows but applies its own
+  reference-date filtering and weather join. Keep those task-specific
+  operations separate while sharing raw source-date strings and diagnostics.
+- Keep sorting keys explicit. Task 5 says arrival_date then vessel name;
+  the coordinated project policy adds call_id only as a final deterministic
+  tiebreaker when both required sort keys are equal.
+
+================================================================
+6. POLICIES RESOLVED BY THE COORDINATED REVISION
+================================================================
+
+The preceding draft's open questions are resolved in Section 7 and
+INTEGRATED-CONTRACT-PLAN.md: diagnostics use the stable shared convention;
+date validation precedes vessel lookup and emits only the first failure
+per row; month parsing uses int() after trimming; and equal sort keys use
+the specified date/name keys followed by call_id. The diagnostic text is
+project policy because the PDF requires reporting but does not mandate
+wording. Review is optional internal workflow, not a requirement or gate.
+
+End of the original Task 5 planning draft. The coordinated revision changes
+plan documents only; it does not implement code or run project commands,
+tests, or builds.
+
+================================================================
+7. INTEGRATION POLICY RESOLUTION
+================================================================
+
+Use INTEGRATED-CONTRACT-PLAN.md for the shared project root, raw call-row
+shape, diagnostics, and fatal loader-error behavior. For each Task 5 row,
+parse the complete arrival_date first; an invalid date is the first
+diagnostic and prevents a later vessel lookup for that row. For a valid
+date, diagnose and skip an unknown vessel. Continue processing later rows.
+Sort valid output by arrival date, then vessel name casefolded, then call_id
+as a final deterministic tiebreaker. The final call_id key resolves only
+otherwise equal specified keys and does not replace the required date/name
+ordering.
+
+After stripping surrounding whitespace, accept integer month text
+representations accepted by int() (including a leading plus/zeroes); reject
+non-integer and out-of-range inputs using the exact mandated error string
+and repeat only the month prompt. These are project policies for lexical
+input and deterministic ties; all exact assignment strings and the
+date/name primary sort remain unchanged.
+
+The resolved policies above are the implementation decisions; exact
+diagnostic wording is not mandated by the PDF. Use the shared stable
+diagnostic convention and report only the first failure per invalid row.

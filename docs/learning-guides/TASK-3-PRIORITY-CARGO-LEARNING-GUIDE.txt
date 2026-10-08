@@ -1,0 +1,96 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 3: PRIORITY CARGO - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to connect a call to its manifest, classify each resolved shipment under
+ordered policy rules, and report category counts. This guide teaches the work;
+it does not provide a finished implementation.
+
+Use beside: BluePrints_2/04-IDENTIFY-PRIORITY-CARGO-DETAILS.txt
+
+What you are learning
+- How to separate a pure decision function from file and console work.
+- Why the order of if/elif conditions can be business policy.
+- How to count outcomes and keep output in source order.
+- How to return both a classification and its explanation.
+
+Terms, functions and control flow to know
+- Pure function: a function whose result depends on its input and which does
+  not read input, print output, or change files. It is easy to test with sample
+  shipment dictionaries.
+- Parameter: a named input a function receives. The classifier receives one
+  shipment record as its parameter.
+- Return value: information a function gives back to its caller. The required
+  classification returns both a category and a reason.
+- if / elif / else: ordered conditional branches. Once one branch matches,
+  later branches are skipped. This expresses the first-matching-rule policy.
+- Boolean: True/False data such as hazardous and temperature_controlled.
+  Missing flags count as false under the shipment rules.
+- or: a Boolean operator. The EXPEDITE rule matches if priority is EXPRESS or
+  weight_kg is at least 5000.
+- Dictionary: a mapping of shipment field names to values. Use safe fallbacks
+  for optional Boolean fields.
+- Counter: a number updated whenever one resolved shipment receives a
+  category. A dictionary can map category names to counts.
+- json.JSONDecodeError / FileNotFoundError: handle malformed or missing files
+  where the service can report an unavailable manifest.
+
+Think about policy order first
+Write the rule order on paper before writing the classifier:
+1. hazardous -> CONTROLLED
+2. temperature_controlled -> COLD CHAIN
+3. EXPRESS priority or weight >= 5000 -> EXPEDITE
+4. otherwise -> STANDARD
+
+A shipment can satisfy more than one condition. If a hazardous shipment is
+also EXPRESS, the first condition wins. Reordering these checks changes the
+business decision, not merely the code style.
+
+Implementation learning steps
+
+Step 1: Locate the selected call
+Strip surrounding spaces from the call ID and compare without regard to case.
+If no port call matches, print Port call not found. and return to the menu.
+
+Step 2: Load the call's manifest
+Find it by comparing call_id fields. If the manifest is missing or malformed,
+print Manifest unavailable. and return. Resolve shipments through shipment_id;
+classify only records that were actually found.
+
+Step 3: Build the classifier on paper
+For one hypothetical shipment, ask each rule in order and stop at the first
+match. Choose a reason that tells the user why that category was selected.
+The PDF gives example reason labels "express service" and "hazardous cargo";
+it does not prescribe exact wording for every reason, so do not claim invented
+labels are mandatory.
+
+Step 4: Test the pure function before adding interaction
+Prepare one input for each category. Also prepare records that match two rules
+to prove precedence. Check both returned values: category and reason.
+
+Step 5: Integrate the manifest loop
+Visit shipment IDs in manifest order. For each resolved shipment, call the
+classifier, print its decision, and increment its category count. Missing
+shipments are not classified as valid records.
+
+Step 6: Print totals in policy order
+Print all four categories, including zero counts, in this order:
+CONTROLLED, COLD CHAIN, EXPEDITE, STANDARD.
+Do not let dictionary iteration decide visible output order.
+
+Reasoning questions
+- Why must this classifier avoid input(), print() and file access?
+- What result should win when hazardous and temperature-controlled are both
+  true?
+- Why is EXPRESS checked with >= weight in the same rule?
+- Are category totals based on resolved shipments or declared shipment IDs?
+- Why should the final output order be explicit?
+
+Test checklist
+[ ] Each condition produces its required category.
+[ ] A shipment matching multiple rules gets the first matching category.
+[ ] Missing optional Boolean flags act as false.
+[ ] Each resolved shipment is printed in manifest order with category/reason.
+[ ] Unknown call and unavailable manifest print their exact messages.
+[ ] Totals include zeros and use the exact category order.
+[ ] The classifier can be tested without console or file operations.

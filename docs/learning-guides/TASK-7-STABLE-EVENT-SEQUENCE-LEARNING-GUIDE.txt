@@ -1,0 +1,91 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 7: STABLE EVENT SEQUENCE - LEARNING AND CODING GUIDE
+
+Purpose
+Learn how a sliding window finds the longest contiguous run with no repeated
+event codes. This guide teaches the reasoning and concepts, not a finished
+implementation.
+
+Use beside: BluePrints_2/08-STABLE-EVENT-SEQUENCE-DETAILS.txt
+
+What you are learning
+- How a contiguous sequence differs from any scattered collection of events.
+- How a dictionary can remember where an event last appeared.
+- How a sliding window moves forward without restarting from scratch.
+- How strict comparison preserves the first result when lengths tie.
+
+Terms, functions and data structures
+- List: an ordered sequence of event codes. Its order represents chronology.
+- Index/position: an item's zero-based location in a list.
+- enumerate(): walks through the event list while providing each code's
+  position.
+- Dictionary: maps each event code to its most recent position.
+- Sliding window: the current contiguous section, described by a start
+  position and the current position.
+- len(): gives the current window length when calculated from its two bounds.
+- List slice: a range of positions from the original list. Use the best start
+  and end bounds to recover the winning sequence in original order.
+- None: a value that can represent "this event has not been seen yet" when
+  checking the dictionary.
+
+Learn the window rule
+Keep two ideas separate:
+- The current window start says which earlier events still belong to this run.
+- The dictionary remembers the most recent position of every event seen so far.
+
+When an event repeats, check whether its previous position is still inside the
+current window. If it is, move the start to one position after that old event.
+If the old position is before the current window, the repeat does not affect
+the active run. Never move the start backwards.
+
+Walk through the assignment example
+Events: GATE_IN, SCAN, WEIGH, SCAN, LOAD, SEAL, DEPART
+- The first three events are distinct, so the window grows to length 3.
+- SCAN repeats at position 3; its previous position is 1, inside the window.
+  Move the start to position 2. The current run is WEIGH, SCAN.
+- LOAD, SEAL and DEPART each extend the run, reaching length 5.
+- The winning sequence is WEIGH -> SCAN -> LOAD -> SEAL -> DEPART.
+
+Implementation learning steps
+
+Step 1: Agree on the selected call
+The PDF requires a selected call but does not prescribe the exact prompt. Use
+the team's agreed service interaction and retrieve that call's manifest.
+
+Step 2: Read event_codes without changing chronology
+Treat the list as already chronological. Do not sort it: sorting would change
+the journey and therefore the result.
+
+Step 3: Track last-seen positions
+As you inspect each event, look up its previous position. Only repeats inside
+the current window move the start. Then update its latest position.
+
+Step 4: Track the best window
+Calculate the current window length after any start movement. When it is
+strictly longer than the best length, save its boundaries. Use strictly longer,
+not longer-or-equal, so an equal-length later run does not replace the first.
+
+Step 5: Recover and display the winning events
+Use the saved boundaries to retrieve a contiguous portion of the original list.
+Print its length and join the event codes with the required arrow separator.
+
+Step 6: Test tricky repeats
+Test a repeated code immediately, then test a repeated code whose old position
+is already before the active window. The second case proves the start never
+moves backwards.
+
+Reasoning questions
+- Why is the result required to be contiguous?
+- When does a repeat force the window start to move?
+- Why is checking only whether an event appeared anywhere in the list wrong?
+- Why save the best window's boundaries rather than rebuilding it each step?
+- Why keep the first result on a tie?
+
+Test checklist
+[ ] An all-unique list returns the full list.
+[ ] An immediate repeated event moves the start past the earlier copy.
+[ ] A repeat outside the active window does not move the start backwards.
+[ ] Equal-length best windows keep the earliest one.
+[ ] The result is contiguous and has no repeated event code.
+[ ] Empty and short lists are handled deliberately.
+[ ] The assignment's sample produces length 5 and the stated sequence.

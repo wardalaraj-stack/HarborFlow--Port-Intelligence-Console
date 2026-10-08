@@ -1,0 +1,93 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 1: REGISTERED VESSELS - LEARNING AND CODING GUIDE
+
+Purpose
+Learn how to load a collection of separate JSON files, validate each record,
+and keep one bad file from stopping the whole inventory. This is a guide, not
+finished code; write the implementation yourself.
+
+Use beside: BluePrints_2/02-REGISTER-VESSELS-DETAILS.txt
+
+What you are learning
+- The difference between loading one file and loading a folder of files.
+- How JSON objects become Python dictionaries.
+- How to check required fields and handle optional or malformed records.
+- How to keep per-record errors from ending an entire batch operation.
+- How sorting and formatting turn data into a clear report.
+
+Terms, functions and exceptions to know
+- Path: an object representing a filesystem location. pathlib.Path helps build
+  and inspect paths without hard-coding a computer-specific location.
+- glob("*.json"): a Path operation that finds JSON files in a directory. It
+  gives you paths to process, not the contents of those files.
+- open() or Path.open(): opens a file so it can be read. A with block manages
+  closing the file even if parsing fails.
+- json.load(): reads JSON text from an open file and converts it to Python
+  values, commonly a dictionary for an object record.
+- dict: a mapping of field names to values. Read a vessel's name or IMO using
+  its field key; validate that required keys are present.
+- sorted(): returns a new ordered list. A case-insensitive name key lets
+  uppercase and lowercase letters sort consistently.
+- load_json(path): the small single-file helper named in the blueprint. It
+  should have one clear responsibility: read and parse one JSON record.
+- load_vessels(directory): the collection helper. It checks every file, keeps
+  valid vessel records and makes rejected-file information available to the
+  reporting service.
+- FileNotFoundError: means the expected file or directory could not be found.
+- json.JSONDecodeError: means the file exists but its contents are not valid
+  JSON. Catch it at the per-file boundary so other vessel files still load.
+
+Build it in learning-sized steps
+
+Step 1: Inspect representative records
+Open several vessel JSON files and compare their fields. Notice that filenames
+are not the data model: validate the record contents. Do not edit the supplied
+malformed record to make the test pass.
+
+Step 2: Design the one-file boundary
+Plan load_json(path) separately from the folder loop. Ask: what value should it
+return when parsing succeeds, and which expected file errors can it report to
+the caller? Keep its job small so it can be tested independently.
+
+Step 3: Validate presence, not just truthiness
+A required field must exist: vessel_id, name, imo and capacity_teu. A check that
+rejects every false-looking value is not automatically the same as a key
+presence check. Follow the data dictionary for value rules; do not invent extra
+validation requirements.
+
+Step 4: Isolate a bad file
+For each path from the directory scan, attempt to load and validate that one
+record. If it is malformed or missing a required field, record/report the
+rejection and continue with the next path. Do not put one try block around the
+entire collection if that would discard valid vessels after the first failure.
+
+Step 5: Return records and rejection evidence
+Keep valid records separate from skipped-file information. The collection
+loader may return valid records with a rejected count or rejected-file list.
+Choose one clear interface and have the display layer use it consistently.
+
+Step 6: Sort and format only valid records
+Sort valid records by name without regard to case. Print each vessel's name,
+IMO and capacity in the required line format, then show the skipped count.
+Formatting with a thousands separator affects display, not the stored number.
+
+Step 7: Test mixed input
+Test with valid files beside the intentional malformed file. Confirm the valid
+records still appear and the skipped count reflects rejected files.
+
+Reasoning questions
+- Which function owns parsing one file, and which owns iterating over files?
+- If file 2 is malformed, how does file 3 still get processed?
+- Why should a filename not be treated as vessel_id?
+- Is a required field missing, or is its value merely empty? What does the PDF
+  require you to validate?
+- Is sorting changing the records, or just their display order?
+
+Acceptance checklist
+[ ] All .json files in dataset/vessels are considered.
+[ ] Required keys are vessel_id, name, imo and capacity_teu.
+[ ] Valid records are sorted case-insensitively by name.
+[ ] Malformed JSON and missing required fields are reported and skipped.
+[ ] One bad record does not suppress valid vessels.
+[ ] The skipped count agrees with the rejected-file evidence.
+[ ] No sample vessel name, IMO or count is hard-coded.

@@ -1,0 +1,103 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 6: INCIDENT REDACTION - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to select an incident and use regular expressions to replace only the
+specified sensitive values while preserving the report. This guide explains
+the tools and reasoning; it is not a finished solution.
+
+Use beside: BluePrints_2/07-SANITIZE-INCIDENT-REPORT-DETAILS.txt
+
+What you are learning
+- How to sort and number choices for a user.
+- How a regular expression describes a text pattern.
+- How sequential substitutions transform text without rewriting unrelated text.
+- How to decide whether a file should be created.
+- How to preserve line endings when editing a report.
+
+Terms, functions, exceptions and pattern parts
+- sorted(): orders incident titles. A case-insensitive key makes the ordering
+  stable regardless of title capitalization.
+- enumerate(): walks through an ordered collection while also providing a
+  number. Starting numbering at 1 matches the user-facing selection list.
+- re.sub(pattern, replacement, text): returns text with every matching part
+  replaced. The task explicitly requires re.sub() for all three redactions.
+- re.IGNORECASE: a regular-expression flag that ignores letter case. Use it
+  for the four-letter container prefix and the SEAL prefix as required.
+- Character class: brackets in a regex describe which characters may appear
+  at one position, such as letters or digits.
+- Quantifier: a count after a pattern part specifies how many characters are
+  required, such as four letters followed by seven digits.
+- Escaping: a backslash makes a regex punctuation mark literal. A dot normally
+  means "any character" in regex; an email's final dot must be treated as a
+  literal period.
+- Path: pathlib.Path represents the output location without a machine-specific
+  absolute path.
+- mkdir(): creates a directory. The parent-creation and already-exists options
+  let the service prepare exports/sanitized/ safely.
+- newline="": when opening text files, this prevents newline translation so
+  existing line endings can be preserved as required.
+- FileNotFoundError and json.JSONDecodeError: handle missing/malformed incident
+  sources at a useful boundary; do not hide unrelated programming errors.
+
+Think of redaction as three focused passes
+1. Start with the original report string.
+2. Replace every container identifier with [CONTAINER].
+3. Replace every seal number with [SEAL].
+4. Replace every email address with [EMAIL].
+5. Compare the final string with the original to decide whether any change was
+   made.
+6. If changed, write the sanitized text. If unchanged, do not create a file.
+
+Do not replace broad surrounding phrases. Each regex should match just the
+sensitive value, so punctuation and other wording remain untouched.
+
+Learning steps
+
+Step 1: Build the selection list
+Sort incident records by title without regard to case. Number them from 1 and
+keep the selected record associated with its incident_id. If selection input
+is invalid, print the exact error and repeat only the number prompt.
+
+Step 2: Describe each pattern in words first
+- Container: exactly four letters, then exactly seven digits; letters ignore
+  case.
+- Seal: the letters SEAL, a hyphen, then exactly six digits; prefix ignores
+  case.
+- Email: allowed characters before @, allowed domain characters, then a final
+  period and at least two letters.
+Only after you can explain the boundaries should you write each regex.
+
+Step 3: Apply re.sub() one transformation at a time
+Keep the output of one pass as the input to the next. Test each pattern on its
+own first, then test all types in one report. A substitution should leave all
+nonmatching text alone.
+
+Step 4: Preserve the report
+The specification requires all other text, punctuation and line breaks to
+remain unchanged. Be careful when opening text files because default newline
+translation can change line endings. Use a reading/writing approach that
+preserves them.
+
+Step 5: Decide whether an output is warranted
+Compare the final report with the original. Create exports/sanitized/ only when
+a changed report needs saving. Use the incident_id in the required filename.
+For no substitutions, print the exact no-sensitive-identifiers message and do
+not create the output file.
+
+Reasoning questions
+- Why is replacing a whole sentence riskier than replacing a matched value?
+- Why should each regex be tested independently before combining them?
+- How does case-insensitive matching differ from lowercasing the whole report?
+- What tells you whether any replacement happened if you use re.sub()?
+- Why should unchanged reports create no file?
+
+Test checklist
+[ ] Titles sort case-insensitively and selection numbering starts at 1.
+[ ] Invalid selection repeats only that prompt with the exact error.
+[ ] Each sensitive type is replaced when tested alone.
+[ ] Mixed sensitive values are all replaced in one report.
+[ ] Case-insensitive prefixes are matched.
+[ ] Text, punctuation and line breaks outside matched values are preserved.
+[ ] Changed output uses exports/sanitized/<incident_id>-sanitized.txt.
+[ ] No-match report prints the exact message and creates no output.

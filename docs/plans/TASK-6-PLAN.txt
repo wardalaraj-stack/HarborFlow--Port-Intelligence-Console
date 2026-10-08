@@ -1,0 +1,276 @@
+﻿TASK 6 PLAN — HarborFlow Port Intelligence Console: Sanitize an Incident Report
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-28
+
+================================================================
+1. SCOPE AND EVIDENCE
+================================================================
+
+Scope is Task 6 only — “Sanitize an incident report” (menu option 6). This
+is a planning document, not an implementation. File-scope statements in
+this section describe the original Task 6 drafting pass. The coordinated
+revision edits planning documents only; it does not modify application
+code, source data, test-ledger.csv, or readme.txt. No project commands,
+tests, or builds were run.
+
+Authoritative scope source: C:\Users\conda\Downloads\DIT014 HT26
+Assignment 2 - HarborFlow Port Intelligence Console.pdf, Task 6 on PDF
+page 7. The requirement and demonstrated transformation are transcribed in
+Section 2; no requirements from Tasks 5 or 7 are substituted for Task 6.
+
+Read-only supporting evidence:
+- START-HERE.txt: keep the directory layout, use relative dataset paths,
+  keep supplied dataset files read-only, and write persistent program
+  outputs under exports/.
+- dataset\DATA-DICTIONARY.md: incident records contain required
+  incident_id, call_id, title, and report fields.
+- dataset\incidents\inc-087.json, inc-102.json, inc-119.json, and
+  inc-131.json: all four supplied incident records and their exact titles
+  and report text were inspected. Two reports contain all three identifier
+  types; the other two exercise no-match behavior.
+- test-ledger.csv: the Regex / Several identifiers row uses “Sanitize Reefer
+  temperature deviation” and expects all three identifier types replaced;
+  status is Not run. This is existing planned evidence, not a passed test.
+- TASK-0-PLAN.txt through TASK-5-PLAN.txt: read-only neighboring-plan
+  context and shared interface/reuse contracts.
+
+Review is optional internal workflow, not an assignment requirement or
+implementation gate. The integrated contract and this plan's Section 7
+state the current resolved policies; no test execution or approval is
+claimed.
+
+================================================================
+2. TASK 6 REQUIREMENT SUMMARY (from the assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Protect commercially sensitive identifiers before a
+report is shared with an external partner.
+
+Exact Task 6 requirement text:
+
+Display incident titles sorted case-insensitively and numbered from 1. Ask
+for the list number; for invalid input, print Error - Select a listed
+incident. and repeat only that prompt. Using regular expressions, replace
+every container identifier, seal number and email address in the selected
+report. Preserve all other text, punctuation and line breaks. Save the
+result in exports/sanitized/<incident_id>-sanitized.txt.
+
+- A container identifier is four letters followed by seven digits. Match
+  letters case-insensitively.
+- A seal number is SEAL- followed by six digits. Match the SEAL prefix case-
+  insensitively.
+- For this assignment, an email contains letters, digits or ._%+- before @,
+  a domain containing letters, digits, dots or hyphens, and a final dot
+  followed by at least two letters.
+
+Sensitive value | Input pattern example | Replacement
+Container ID | MSCU1234567 | [CONTAINER]
+Seal number | SEAL-884210 | [SEAL]
+Email address | name@company.se | [EMAIL]
+
+Exact demonstrated report transformation:
+  Container MSCU1234567 arrived with seal SEAL-884210. Notify ops@harborflow.se.
+  [CONTAINER] arrived with seal [SEAL]. Notify [EMAIL].
+
+Additional exact requirement/output text:
+- “Incident contains no share-sensitive identifiers.” — print if no
+  substitution occurs; do not create a file in that case.
+- “Use re.sub() for the three transformations.”
+- “A report is considered changed when at least one substitution occurs.”
+- “Create the output directory when necessary.”
+
+The PDF requires a numbered, case-insensitively sorted title list and a
+selection prompt, but does not prescribe their exact heading, list-line
+format, or prompt string. Do not present an invented prompt or list layout
+as a literal requirement.
+
+================================================================
+3. PROPOSED DESIGN AND MODULE RESPONSIBILITIES
+================================================================
+
+Use the shared loading, root-path, and fatal-error contracts in
+INTEGRATED-CONTRACT-PLAN.md while preserving Task 6's explicit requirements.
+
+data_access.py:
+- Use the canonical `load_json(path)` and `load_incidents(directory)`
+  contracts in INTEGRATED-CONTRACT-PLAN.md to read every JSON incident
+  record from the relative dataset/incidents/ directory. Do not hard-code
+  the four current filenames, identifiers, titles, or report bodies. The
+  task needs only the required incident_id, title, and report values after
+  loading; call_id remains available as source metadata.
+- Keep input paths relative to the project root. Treat source incident JSON
+  as read-only. Output text belongs only at the required path under
+  exports/sanitized/.
+- Use pathlib/os directory creation as needed for the output parent and
+  UTF-8 text writing; do not create the directory or file for a no-change
+  report.
+
+text_tools.py:
+- Add a focused pure transformation such as
+  sanitize_incident_report(report: str) -> (sanitized_text: str, changed: bool).
+  Apply three `re.sub()` transformations for container IDs, seal numbers,
+  and emails, with the mandated case-insensitivity for alphabetic parts.
+  The flag is true if any of the three substitutions matched. Preserve all
+  characters other than matched identifier spans, including capitalization
+  outside those spans, punctuation, spaces, and line endings.
+- Use whole-token boundaries so a valid-looking identifier embedded in a
+  larger token is never partially replaced. Use the precise container,
+  seal, and email boundary/character rules in
+  INTEGRATED-CONTRACT-PLAN.md. Apply email, container, then seal using
+  `re.sub()`, preserving every character outside the matched spans.
+- Keep transformations independent of file I/O, title sorting, prompts,
+  printing, and output path selection so each regex class can be tested
+  against isolated strings.
+
+operations.py:
+- Provide a small pure helper to order valid incident records by
+  case-insensitive title and return them in display order. Numbering is
+  assigned by the displayed position, starting at 1; use the chosen
+  case-insensitive key consistently. The PDF gives no secondary tie-break
+  for titles equal ignoring case.
+- Avoid duplicating the regex implementation here; import/reuse the
+  text_tools transformation. Do not classify unchanged reports as output
+  candidates.
+
+main.py:
+- In the selection == 6 branch, load incident records, present their titles
+  sorted case-insensitively with sequential numbers, and prompt for one
+  list number. Invalid input (including non-integer or a number outside the
+  displayed list) prints exactly “Error - Select a listed incident.” and
+  repeats only the selection prompt; it must not redisplay the title list
+  during that retry. The prompt text itself is not specified by the PDF.
+- For the selected record, pass its original report to the pure sanitizer.
+  If changed is false, print exactly “Incident contains no share-sensitive
+  identifiers.” and do not create a sanitized file. If changed is true,
+  save only the sanitized text as
+  exports/sanitized/<incident_id>-sanitized.txt, creating the directory if
+  needed. Do not append status text to the file or alter the source report.
+- Return to the existing outer menu after completion. Keep option 10's
+  closure and other service branches unchanged. Catch only the specific
+  file/JSON/input errors where a useful user-facing recovery is defined by
+  the shared console design; do not use a blanket exception.
+
+================================================================
+4. DATA-GROUNDED ACCEPTANCE CASES (planned, not run)
+================================================================
+
+[ ] Exact all-types example and ledger mapping: select “Reefer temperature
+    deviation” (INC-102). Its source report is exactly:
+      Container MSCU1234567 arrived with seal SEAL-884210. The reefer
+      temperature alarm was checked. Notify ops@harborflow.se.
+    The sanitized output content must be exactly:
+      Container [CONTAINER] arrived with seal [SEAL]. The reefer
+      temperature alarm was checked. Notify [EMAIL].
+    The output path is exports/sanitized/INC-102-sanitized.txt. This maps
+    directly to the Regex / Several identifiers ledger row (all three types
+    replaced), which remains Not run; do not mark it passed in this plan.
+
+[ ] Separate identifier coverage on supplied data: selecting “Reefer
+    transfer delayed” (INC-119) sanitizes TGHU7654321, SEAL-119204, and
+    shift.lead@harborflow.se, replacing each with its respective token.
+    This independently exercises all three patterns on a distinct report.
+
+[ ] No-match does not write: selecting “Gate congestion delay” (INC-087)
+    must preserve the source text as unchanged, print exactly “Incident
+    contains no share-sensitive identifiers.”, and leave
+    exports/sanitized/INC-087-sanitized.txt absent (even if the output
+    directory already exists). “Routine inspection completed” (INC-131)
+    provides a second no-match report containing no identifier patterns.
+
+[ ] Title order and list numbering: with the four supplied incident files,
+    case-insensitive alphabetical display order is Gate congestion delay
+    (INC-087), Reefer temperature deviation (INC-102), Reefer transfer
+    delayed (INC-119), Routine inspection completed (INC-131), numbered
+    1 through 4. The source enumeration order is not a substitute for sort.
+
+[ ] Selection validation: non-integer input and numeric values below 1 or
+    above the available list size each produce exactly “Error - Select a
+    listed incident.” and repeat only the selection prompt; a valid number
+    then selects the corresponding displayed record. Exact prompt/list
+    layout is not asserted because the PDF does not prescribe it.
+
+[ ] Pattern boundaries and preservation: test each identifier pattern
+    alone, several in one report, mixed-case container/seal prefixes, valid
+    punctuation and line breaks around matches, and text with no match.
+    All unmatched text must remain byte-for-character equivalent at the
+    string level. Add constructed boundary fixtures without editing supplied
+    dataset files.
+
+[ ] Output lifecycle: create the sanitized directory when absent; write
+    UTF-8 sanitized text to the exact incident-ID-derived filename; rerun
+    sanitization without duplicating text or touching source JSON. Verify a
+    no-change report never creates its destination file.
+
+The assignment's page-11 Regex campaign lists “Each identifier type alone,
+several in one line, no match.” The existing ledger specifically records
+only the several-identifiers scenario. This plan covers those three
+campaign dimensions and supplements them with the shipped incident records;
+it does not assert that any Task 6 behavior has already been tested.
+
+================================================================
+5. SHARED-INTERFACE AND REUSE RISKS
+================================================================
+
+- Reuse the shared `load_json(path)` and `load_incidents(directory)` result
+  in INTEGRATED-CONTRACT-PLAN.md. Do not introduce a second JSON parser or
+  directory walk for incident reports. The loader retains valid records
+  and structured diagnostics; fatal directory and file-I/O errors
+  propagate.
+- The PDF's suggested architecture assigns “regex sanitization, sequence
+  and search index” to text_tools.py. Task 6's three re.sub() operations
+  therefore belong there, independently testable; menu orchestration and
+  output writing must not be folded into those text helpers.
+- Task 9 also consumes incident reports and maintains a search index/cache.
+  Keep Task 6 strictly non-destructive: never sanitize in place, never
+  repoint the source report loader at exports/sanitized/, and never make
+  sanitized text silently replace raw reports used for incident indexing.
+  Reuse the shared incident-record loader and its error contract specified
+  in TASK-9-PLAN.txt and INTEGRATED-CONTRACT-PLAN.md.
+- The sanitized output is persistent generated data (START-HERE.txt allows
+  program outputs under exports/). The Task 6 destination naming is
+  incident_id-based; the shared incident loader's deterministic policy is
+  that the first valid record in sorted source-path order wins and later
+  duplicate incident IDs are diagnosed and skipped.
+- Case-insensitive title sorting is explicit, but the actual casefold/lower
+  key and equal-key tiebreak behavior are not. Keep the policy deterministic
+  if possible without changing the required primary sort.
+- Ensure `re.sub()` is used for each of the three transformations (not one
+  unrelated manual scan), with flags that make container letters and the
+  SEAL prefix case-insensitive. Do not over-normalize report text; privacy
+  replacement must not disturb punctuation, line breaks, or ordinary prose.
+
+================================================================
+6. POLICIES RESOLVED BY THE COORDINATED REVISION
+================================================================
+
+The coordinated choices in Section 7 and INTEGRATED-CONTRACT-PLAN.md settle
+whole-token boundaries, email character sets and continuation handling,
+substitution order, no-change output behavior, and per-file recovery.
+Retain the already unspecified incident-list presentation and prompt as
+project UI choices; the exact invalid-selection and no-sensitive-identifier
+strings remain the assignment contract. File write failures must be
+surfaced explicitly and must not alter the source or corrupt another
+output. Review is optional internal workflow, not a requirement or gate.
+
+End of the original Task 6 planning draft. The coordinated revision changes
+plan documents only; it does not implement code or run project commands,
+tests, or builds.
+
+================================================================
+7. INTEGRATION POLICY RESOLUTION
+================================================================
+
+INTEGRATED-CONTRACT-PLAN.md is canonical for the project root, shared
+incident loader, diagnostics, and Task 9 source/cache behavior. It supersedes
+the unresolved-boundary discussion in Section 6 as follows: use whole-token
+boundaries for all three identifier types; use the exact email character
+sets and continuation checks there; apply email, container, then seal
+re.sub() transformations; compare final text to the original for changed
+status; and preserve unmatched text exactly. The focused boundary fixtures
+listed in the contract are required implementation cases.
+
+The no-change path must not create, overwrite, or delete the sanitized
+destination, including when a prior output file exists. A changed report is
+written only to its incident-ID destination under exports/sanitized/.
+Task-specific prompts and every mandated output string in Section 2 remain
+unchanged.

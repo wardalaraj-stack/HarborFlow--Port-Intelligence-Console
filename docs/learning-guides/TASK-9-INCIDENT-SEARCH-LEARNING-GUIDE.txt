@@ -1,0 +1,100 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 9: INCIDENT SEARCH - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to create a reusable inverted index, decide when its cache is stale, and
+score searches using the loaded index. This guide teaches the design; it does
+not provide a finished implementation.
+
+Use beside: BluePrints_2/10-SEARCH-INCIDENT-REPORTS-DETAILS.txt
+
+What you are learning
+- How text becomes normalized search terms.
+- How a dictionary of word-to-ID lists supports fast lookup.
+- How a title map provides display text without reopening reports.
+- How to persist and validate a JSON cache.
+- How to score distinct query terms and sort ranked results.
+
+Terms, functions, exceptions and data structures
+- lower(): converts text to lowercase so searches ignore capitalization.
+- re.sub(): can replace punctuation with spaces before splitting text into
+  words. Use the same normalization process for reports and user queries.
+- split(): divides normalized text into whitespace-separated words.
+- Dictionary: the inverted index maps each word to incident IDs. A second
+  dictionary maps incident IDs to titles.
+- List: stores incident IDs for an indexed word. Check before adding so one
+  report does not add its ID twice to that word's list.
+- Set or distinct-word list: tracks query terms already scored so repeated
+  query words count once.
+- json.load(): parses an existing cache from a file.
+- json.dump(): writes the index and title maps as valid JSON.
+- Path.stat().st_mtime: reads a file's modification time. Compare the cache
+  time with source incident files to decide whether it is older.
+- sort(): orders ID lists in place. JSON object keys can also be written in
+  sorted order; the ID lists still need their own sorting.
+- FileNotFoundError and json.JSONDecodeError: a missing or malformed cache is
+  a rebuild case, not a reason to abandon searching. Handle source-file errors
+  at the appropriate loader boundary.
+
+Understand the inverted index
+A normal incident record groups data by incident. An inverted index groups it
+by word. For example, the word "reefer" points to every incident ID whose
+report contains that word. The title map is separate so search results can
+show a readable title from the same cache.
+
+Keep the cache shape limited to the required top-level keys: index and titles.
+Do not add cache metadata to that JSON object unless the assignment changes.
+The cache file's own modification time can be compared with the source files.
+
+Learning steps
+
+Step 1: Design one normalization rule
+Lowercase report text and remove punctuation with regex, producing words.
+Write down how punctuation between words is handled, then use the identical
+rule for user queries. Different normalization would make valid matches vanish.
+
+Step 2: Build the index from source incidents
+For each incident, normalize its report and visit its words. Add the incident
+ID under each word only once, even if that word repeats in the report. Save its
+title under the incident ID in the title map.
+
+Step 3: Make output deterministic
+Before saving, sort the word keys, title keys and every incident ID list. Stable
+ordering makes the cache auditable and tests predictable.
+
+Step 4: Decide cache freshness before searching
+If the cache is missing, malformed, or older than any source incident file,
+rebuild it. Otherwise load and reuse it. Keep cache loading/rebuild logic
+separate from the ranking logic so each can be reasoned about independently.
+
+Step 5: Search from the cache only
+Normalize the query. For every distinct query word, look up its incident IDs in
+the loaded index and add one point to each matching incident. Do not reopen
+incident reports while searching; use the cached title map for display.
+
+Step 6: Keep only useful results
+Drop zero-score incidents. Sort remaining results by descending score and then
+ascending incident ID. Make the tie-break explicit so output order is stable.
+
+Step 7: Test cache lifecycle and ranking separately
+Test a missing cache, malformed JSON, a current cache, and a stale cache. Then
+test one-word queries, repeated words, tied scores and no matches.
+
+Reasoning questions
+- How is the inverted index different from rereading every report per search?
+- Why do report and query normalization need to be identical?
+- Why must repeated words not duplicate an ID in an index list?
+- Why does a repeated query word contribute only one point?
+- How do you determine that the cache is older than any source file?
+- Why must search use cached titles and avoid reopening source reports?
+
+Test checklist
+[ ] Report and query normalization match exactly.
+[ ] Repeated report words do not duplicate an ID in a word list.
+[ ] Cache JSON has only the required top-level index and titles keys.
+[ ] Word keys, title keys and ID lists are sorted.
+[ ] Missing, malformed and stale caches rebuild; a fresh valid cache is reused.
+[ ] Search uses only the loaded index and title map.
+[ ] Repeated query words score once; zero-score incidents are omitted.
+[ ] Results sort by descending score and ascending incident ID.
+[ ] One-word, repeated-word, no-match and corrupt-cache cases are tested.

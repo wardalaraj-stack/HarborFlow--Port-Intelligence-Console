@@ -1,0 +1,52 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 1: LIST REGISTERED VESSELS
+
+Business outcome
+Give coordinators a trustworthy inventory built from independent JSON records.
+
+Goal
+Read every .json file in dataset/vessels, validate each record, and display
+valid vessels sorted by name without allowing one bad record to hide the rest.
+
+Required fields
+Each valid vessel record must contain:
+- vessel_id
+- name
+- imo
+- capacity_teu
+
+Implementation steps
+1. Create load_json(path) to read and parse one JSON file.
+2. Create load_vessels(directory) to inspect every .json file in the folder.
+3. Validate that each parsed record contains all four required fields.
+4. Report a malformed file or a record missing a required field, then skip
+   that file. Continue loading the remaining files.
+5. Sort valid vessels by name without regard to case.
+6. Print one line per valid vessel and the number of skipped files.
+
+Required output shape
+Registered HarborFlow vessels:
+- <name> | IMO <imo> | <capacity with thousands separators> TEU
+Skipped vessel files: <count>
+
+Example
+Registered HarborFlow vessels:
+- Baltic Pioneer | IMO 9312048 | 824 TEU
+- Nordic Relay | IMO 9471155 | 1,120 TEU
+- Skagerrak Star | IMO 9684207 | 1,460 TEU
+Skipped vessel files: 1
+
+Error handling
+- Handle FileNotFoundError and json.JSONDecodeError where the loader can
+  identify and report the affected file.
+- Missing required fields are invalid records and must also be reported/skipped.
+- Do not use sample vessel names or counts as hard-coded data; the dataset may
+  be replaced during assessment.
+
+Acceptance checks
+[ ] Every .json file in dataset/vessels is considered.
+[ ] Valid records contain vessel_id, name, imo and capacity_teu.
+[ ] Valid vessels are sorted case-insensitively by name.
+[ ] A malformed JSON file and a missing-field record are each reported/skipped.
+[ ] Valid vessels still appear when another vessel file is invalid.
+[ ] Skipped vessel files reports the rejected-file count.

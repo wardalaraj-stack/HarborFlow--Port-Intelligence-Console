@@ -1,0 +1,105 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 8: WEATHER RISK - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to join upcoming port calls with weather rows and apply multiple
+recommendations without losing ordering or stopping on one bad record. This is
+an educational guide, not finished code.
+
+Use beside: BluePrints_2/09-WEATHER-RISK-DETAILS.txt
+
+What you are learning
+- How to filter calls by vessel and reference date.
+- How two fields form a relationship between schedule and forecast rows.
+- How numeric text is converted safely.
+- Why cumulative rules need independent checks rather than a first-match chain.
+- How to keep malformed rows from ending later valid work.
+
+Terms, functions, exceptions and data structures
+- csv.DictReader: reads each CSV row as a dictionary keyed by its header.
+- strip() and casefold(): trim the requested vessel name and compare without
+  case differences.
+- datetime.strptime(): parses a date string for comparisons; invalid dates
+  raise ValueError.
+- strftime(): formats the arrival date as day, full month name and year.
+- float(): converts weather text into a numeric value; malformed values raise
+  ValueError.
+- Tuple key: a pair of values, such as port_code and date, treated together
+  when matching a forecast. Both values are needed for the match.
+- sorted(): places upcoming calls in chronological order, with call_id as a
+  tie-breaker.
+- if statements: independent checks can all run, allowing multiple
+  recommendations to be combined.
+- if / elif: a first-match chain stops after one condition. That is not suitable
+  for the first three weather recommendations because they can combine.
+- FileNotFoundError, csv.Error and ValueError: handle expected file, CSV and
+  conversion failures at focused boundaries. Avoid a blanket exception.
+
+Understand the matching chain
+A call and a forecast connect by both port_code and arrival_date. Matching only
+the port can select the wrong day's forecast; matching only the date can select
+a different port's forecast.
+
+Filter calls to the selected vessel and dates on or after the reference date.
+Then sort them by date and call_id. For each call, look up its forecast and
+continue to the next call even when one forecast is absent or malformed.
+
+Apply the weather policy in table order
+- wind_kmh >= 45: Suspend crane operations.
+- wave_height_m >= 2.5: Arrange tug assistance.
+- precipitation_mm >= 8 and wind_kmh < 45: Prepare covered handling.
+- If all three values are below their thresholds: Normal operating plan.
+
+The first three conditions are independent: a call can receive more than one
+recommendation. The normal plan applies only when all three measurements are
+below their respective thresholds.
+
+Implementation learning steps
+
+Step 1: Validate the vessel and date separately
+Normalize the vessel name and find its record. If unknown, print the specified
+message and return. Validate the user date in a retry loop that repeats only
+the date prompt.
+
+Step 2: Read and filter port calls
+Parse each arrival_date separately. Report and skip an invalid call date, then
+continue. Keep calls for the chosen vessel that arrive on or after the user's
+date.
+
+Step 3: Find a forecast using both keys
+For every qualifying call, find the weather row with the same port_code and
+date. Missing forecasts print Forecast unavailable and do not stop later calls.
+
+Step 4: Convert numbers in a narrow boundary
+Convert wind_kmh, precipitation_mm and wave_height_m together at the point the
+forecast is processed. If a required value cannot be converted, report that
+forecast row and move on; do not abandon the whole report.
+
+Step 5: Evaluate recommendations cumulatively
+Check the weather conditions in the listed order. Add every applicable
+recommendation to the output. Do not use one elif chain for the first three
+rules, because that would suppress a second true recommendation.
+
+Step 6: Test thresholds as boundaries
+Test values just below and exactly at each >= threshold. Also test combined
+conditions, especially high wind with heavy precipitation: covered handling
+requires precipitation >= 8 and wind below 45.
+
+Reasoning questions
+- Why does matching require both port and date?
+- What does "on or after" mean at the reference-date boundary?
+- Why do combined recommendations need independent condition checks?
+- Which error should affect one row, and which should end the service?
+- What input combination qualifies for the normal operating plan?
+
+Test checklist
+[ ] Vessel lookup trims spaces and ignores case.
+[ ] Invalid user date repeats only that prompt with the exact error.
+[ ] Calls on the reference date are included.
+[ ] Invalid call dates and malformed forecast values are reported/skipped.
+[ ] Forecast matching uses both port_code and date.
+[ ] Calls sort by arrival date then call_id.
+[ ] Each threshold and equality boundary is tested.
+[ ] Combined recommendations appear in table order.
+[ ] Missing forecast does not stop later calls.
+[ ] Unknown vessel and no-upcoming-calls messages are exact.

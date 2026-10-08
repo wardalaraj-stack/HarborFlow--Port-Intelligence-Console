@@ -1,0 +1,42 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 5: FIND PORT CALLS BY MONTH
+
+Business outcome
+Help berth planners review seasonal workload across all scheduled calls.
+
+Goal
+Read port_calls.csv, resolve each call's vessel name, and list valid calls for
+a user-selected month in the required order.
+
+Input validation
+- Ask for a month as an integer from 1 through 12.
+- For non-integer or out-of-range input, print exactly:
+  Error - Enter a month from 1 to 12.
+- Repeat only the month prompt after an error.
+
+Data handling and ordering
+1. Read port_calls.csv and parse each arrival_date.
+2. If a row has an invalid date, report and skip that row; continue processing
+   later rows.
+3. Resolve vessel_id against the vessel records. If the ID is unknown, report
+   and skip that row.
+4. Keep valid rows whose arrival_date month matches the requested month.
+5. Sort matching calls by arrival_date, then by vessel name.
+6. Print the month name in the heading and each call using day month year.
+7. If no valid calls match, print exactly: No port calls found.
+
+Example
+Month (1-12): 10
+Port calls in October:
+- 02 October 2026 | Baltic Pioneer | CPH | HFL-CPH-2017
+- 18 October 2026 | Nordic Relay | GOT | HFL-GOT-2048
+- 18 October 2026 | Skagerrak Star | AAR | HFL-AAR-2071
+
+Boundary and acceptance checks
+[ ] Accept month values 1 and 12; reject 0, 13, decimals and non-integer text.
+[ ] Invalid input prints the exact message and repeats only the month prompt.
+[ ] User month validation is separate from parsing dates in the CSV.
+[ ] One invalid date does not prevent later valid rows from appearing.
+[ ] Unknown vessel_id rows are reported/skipped without hiding valid calls.
+[ ] Calls are sorted by date, then vessel name.
+[ ] No valid matching call prints the exact no-calls message.

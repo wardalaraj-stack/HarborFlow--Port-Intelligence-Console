@@ -1,0 +1,278 @@
+﻿TASK 7 PLAN — HarborFlow Port Intelligence Console: Analyze the Longest Stable Event Sequence
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-28
+
+================================================================
+1. SCOPE AND EVIDENCE
+================================================================
+
+Scope is Task 7 only — “Analyze the longest stable event sequence” (menu
+option 7). This is a planning document, not an implementation. File-scope
+statements in this section describe the original Task 7 drafting pass. The
+coordinated revision edits planning documents only; it does not modify
+application code, source data, test-ledger.csv, or readme.txt. No project
+commands, tests, or builds were run.
+
+Authoritative scope source: C:\Users\conda\Downloads\DIT014 HT26
+Assignment 2 - HarborFlow Port Intelligence Console.pdf, Task 7 on PDF
+page 8. Its full Task 7 requirement and worked example are transcribed in
+Section 2. Page 10's suggested architecture is used only to inform module
+placement, not to expand the feature's behavior.
+
+Read-only supporting evidence:
+- START-HERE.txt: preserve the directory structure, read dataset files via
+  relative paths, keep the supplied dataset read-only, and do not
+  hard-code supplied records.
+- dataset\DATA-DICTIONARY.md: manifests have required call_id, vessel_id,
+  shipment_ids, and event_codes fields; event_codes is a chronological list
+  used by Task 7.
+- dataset\manifests\hfl-got-2048.json, hfl-aar-2071.json,
+  hfl-cph-2017.json, hfl-got-2105.json, and hfl-osl-2090.json: all five
+  supplied manifests and their event_codes were inspected. HFL-GOT-2048
+  supplies the exact PDF example input and test-ledger scenario; other
+  real sequences supply independent normal and tie cases.
+- test-ledger.csv: the Sequence / Repeated event row specifies “Analyze
+  HFL-GOT-2048” and expects “Longest first stable window reported”; its
+  status is Not run. It is a planned check, not a passed test.
+- TASK-0-PLAN.txt through TASK-6-PLAN.txt: read-only context for project
+  constraints, neighboring plan format, and shared interface contracts.
+
+Review is optional internal workflow, not an assignment requirement or
+implementation gate. The integrated contract and this plan's Section 7
+state the current resolved policies; no test execution or approval is
+claimed.
+
+================================================================
+2. TASK 7 REQUIREMENT SUMMARY (from the assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Find the longest uninterrupted stretch of distinct
+operational events in a vessel journey.
+
+Exact Task 7 requirement text:
+
+Each manifest contains an event_codes list in chronological order. For a
+selected call, find the length and content of the longest contiguous
+sequence that contains no repeated event code. When two sequences have
+equal maximum length, keep the first. Implement the sliding-window logic
+yourself; do not use third-party libraries.
+
+Exact demonstrated input and output (PDF page 8):
+  Event codes: GATE_IN,SCAN,WEIGH,SCAN,LOAD,SEAL,DEPART
+  Longest stable sequence length: 5
+  Sequence: WEIGH -> SCAN -> LOAD -> SEAL -> DEPART
+
+Exact algorithm guidance (PDF page 8):
+  Track the start of the current window and the most recent position of each
+event in a dictionary. When an event repeats inside the active window, move
+the start just beyond its previous position; do not restart blindly from
+the repeated event.
+
+Confirmed output contract:
+- “Longest stable sequence length: {n}”
+- “Sequence: {event_code} -> {event_code} -> ...” with event order and the
+  literal ` -> ` separator as demonstrated.
+- The winning sequence is contiguous in the original event_codes list,
+  contains no repeated code, and is the longest such window.
+- If multiple windows have the same maximum length, select the earliest
+  (first) window in chronological/list order.
+- The sliding-window logic must be implemented by the team; no third-party
+  library may perform it.
+
+The PDF does not prescribe the call-selection prompt, how the user selects
+or identifies the call, an unknown-call or unreadable-manifest error string,
+or the display of an empty event_codes list. Project choices are recorded
+in Sections 6-7 and are not literal Task 7 requirements.
+
+================================================================
+3. PROPOSED DESIGN AND MODULE RESPONSIBILITIES
+================================================================
+
+Use the shared loading, root-path, and error contracts in
+INTEGRATED-CONTRACT-PLAN.md while preserving Task 7's explicit behavior.
+
+data_access.py:
+- Use shared `load_port_calls` and `load_manifests` results. Resolve the
+  selected call by trimmed, case-insensitive call_id, then select the first
+  usable manifest whose call_id and vessel_id match that call. Preserve
+  diagnostics and propagate fatal loading errors. Do not load shipments or
+  modify supplied dataset content; Task 7 generates no persistent output.
+
+text_tools.py:
+- The assignment's suggested architecture explicitly places “sequence” in
+  text_tools.py. Add a pure helper such as
+  longest_unique_contiguous_sequence(event_codes: list[str]) -> list[str].
+  It must implement the algorithm directly, using a sliding-window start
+  index, a dictionary from event code to most-recent index, and a saved
+  best window. For each event at index i:
+    1. If its previous index exists and is at or after the active window
+       start, move start to previous_index + 1.
+    2. Record its latest index as i.
+    3. If the active window is strictly longer than the best window so far,
+       save its start/end indices. Strictly longer (not greater-or-equal)
+       preserves the first window when maximum lengths tie.
+  Return the best slice of the input list, preserving event spelling/order.
+  This is O(n) time and O(k) auxiliary space for k distinct event codes.
+  Do not sort events, build non-contiguous selections, reset start to the
+  current repeated event, mutate the input list, or depend on external
+  libraries. Empty input naturally returns an empty sequence; the project
+  console display is resolved in Section 7.
+- Keep this helper independent of loading, call selection, printing, and
+  menu behavior so it can be tested directly with lists, including
+  synthetic tie and repeat-in-window cases.
+
+main.py:
+- In the selection == 7 branch, obtain the selected call's manifest using
+  the integrated call/manifest loader, pass manifest["event_codes"] to the
+  pure helper, and print the two required lines in the exact format above.
+  The call-selection mechanism/prompt is not specified in Task 7. For
+  integration, prefer the shared call-ID lookup already proposed for Task 3
+  and do not add a parallel lookup path; `Call ID: ` is a reasonable
+  proposed prompt only, not a confirmed string requirement.
+- For successful selection, compute output from the loaded list at runtime;
+  do not hard-code the sample input, winning subsequence, or any event code
+  sequence. Return to the outer menu after the service finishes and do not
+  change any other menu option or option-10 behavior.
+- Use the shared project recovery behavior for an unknown call or unusable
+  manifest. The `Manifest unavailable.` string is shared policy rather than
+  a Task 7 assignment-mandated message. Avoid a blanket exception handler.
+
+No vessel join, shipment resolution, date parsing, event-code sorting, or
+persistent export is required for this analysis. The call-to-manifest
+relationship exists so the correct chronological event_codes list can be
+found; unrelated manifest fields must not affect the computed window.
+
+================================================================
+4. DATA-GROUNDED ACCEPTANCE CASES (planned, not run)
+================================================================
+
+[ ] PDF example and ledger mapping: select call HFL-GOT-2048 and analyze its
+    real event_codes list:
+      ["GATE_IN", "SCAN", "WEIGH", "SCAN", "LOAD", "SEAL", "DEPART"]
+    The expected output is exactly:
+      Longest stable sequence length: 5
+      Sequence: WEIGH -> SCAN -> LOAD -> SEAL -> DEPART
+    The repeated SCAN at index 3 must advance the active window start to
+    the element after its earlier SCAN, retaining WEIGH rather than
+    restarting at the later SCAN. The resulting five-code suffix is the
+    unique longest window. This is the test-ledger.csv Sequence / Repeated
+    event case; its status remains Not run, not passed.
+
+[ ] First maximum wins on a tie, using real data: HFL-AAR-2071 contains
+    ["GATE_IN", "SCAN", "SCAN", "LOAD", "LOAD", "DEPART"]. Its longest
+    distinct contiguous windows have length 2; the earliest is
+    ["GATE_IN", "SCAN"]. The reported result must be:
+      Longest stable sequence length: 2
+      Sequence: GATE_IN -> SCAN
+    A later length-2 window must not replace the earlier winner. This
+    directly checks the PDF's equal-maximum rule on a supplied manifest.
+
+[ ] Independent no-repeat baseline, real data: HFL-CPH-2017 has six
+    distinct event codes in order. Expected output:
+      Longest stable sequence length: 6
+      Sequence: GATE_IN -> SCAN -> WEIGH -> LOAD -> SEAL -> DEPART
+    This confirms the full input survives as one contiguous stable window.
+
+[ ] Another repeated-window case, real data: HFL-OSL-2090 contains six
+    distinct event codes in order, so its longest result is the complete
+    six-code sequence. HFL-GOT-2105 contains four distinct codes, so its
+    result is the complete four-code sequence. These independent data
+    checks ensure the routine uses each selected manifest's own chronology
+    rather than reusing one prior result.
+
+[ ] Repeat inside the active window: constructed list ["A", "B", "A", "C"]
+    must return ["B", "A", "C"] with length 3; the second A moves start
+    from 0 to 1, not to the repeated A's index. Stale repeat outside the
+    active window: ["A", "B", "A", "C", "A", "B", "D"] must return
+    ["C", "A", "B", "D"] with length 4. After the repeat at index 2
+    moves start to 2, the A at index 4 moves it to 3; the B at index 5 has
+    its last occurrence at index 1, before start, so it must not move the
+    start backward or discard the valid length-4 window. These cases verify
+    both branches of the previous-index-in-window condition.
+
+[ ] Tie behavior at helper boundary: for ["A", "B", "A", "B"], both
+    length-2 windows are maximal; return ["A", "B"] from the first
+    occurrence. This isolates first-on-tie behavior independent of file
+    loading and supplements the real HFL-AAR-2071 fixture.
+
+[ ] Empty and singleton inputs: empty event_codes returns length 0 and an
+    empty sequence without error; the console prints length 0 and a blank
+    Sequence line per the project policy in Section 7. ["GATE_IN"] returns
+    length 1 and that event.
+
+[ ] Purity and scope: repeated calls with the same list return identical
+    results and leave the input list unchanged. Changing unrelated manifest
+    fields does not change the result for a fixed event_codes list. All
+    results must be derived from the selected manifest at runtime; no
+    supplied call IDs, sample event arrays, or expected subsequences may be
+    embedded as implementation data.
+
+[ ] Shared-console integration: option 7 is reachable from the existing
+    menu; a valid call loads its manifest through the integrated shared
+    data-access route, displays the two required lines, then returns to the
+    menu. Unknown call and unreadable/malformed manifest paths must recover
+    according to the agreed shared behavior without terminating the
+    console. Use the project `Call ID: ` prompt and the shared recovery
+    messages in Section 7; these are project policies, not Task 7 PDF
+    mandates.
+
+================================================================
+5. SHARED-INTERFACE AND REUSE RISKS
+================================================================
+
+- Reuse the shared trimmed, case-insensitive call-ID selection and
+  first-usable manifest recovery in INTEGRATED-CONTRACT-PLAN.md. Task 7
+  requires neither vessel lookup nor shipment resolution; it validates the
+  selected manifest's event_codes before sequence analysis.
+- PDF page 10 places “sequence” in text_tools.py, while menu and
+  orchestration belong in main.py and loading belongs in data_access.py.
+  Keep the sliding-window algorithm in one pure helper, not duplicated in
+  the menu branch or hidden in a loader.
+- The required order is chronological input order, not alphabetical order
+  or sorted distinct codes. The term “stable” means no repeated event code
+  within a contiguous window, not a subsequence formed by skipping events.
+- The equality rule requires preserving the FIRST longest window. Updating
+  the winner on `>=` instead of `>` is a subtle regression that will return
+  the later tie; keep this implementation condition and acceptance case
+  explicit.
+- The supplied data includes repeated event codes in HFL-GOT-2048 and
+  HFL-AAR-2071. These are deliberate, valid test conditions; do not edit or
+  “clean up” them.
+- event_codes must be a list of strings under the shared manifest contract.
+  Do not normalize event codes; compare and display each code exactly as
+  stored. Duplicate call/manifest selection follows the shared contract.
+
+================================================================
+6. POLICIES RESOLVED BY THE COORDINATED REVISION
+================================================================
+
+Task 7 uses Task 3's shared trimmed, case-insensitive call-ID selection and
+manifest recovery; `Call ID: ` is the project prompt, not a PDF-mandated
+string. The unavailable-manifest recovery message is shared and is not
+claimed as a Task 7 literal. Validate event_codes as a string list, retain
+source order and first-tie behavior, and use Section 7's length-zero and
+blank Sequence line for a valid empty list. Review is optional internal
+workflow, not a requirement or gate.
+
+End of the original Task 7 planning draft. The coordinated revision changes
+plan documents only; it does not implement code or run project commands,
+tests, or builds.
+
+================================================================
+7. INTEGRATION POLICY RESOLUTION
+================================================================
+
+Use INTEGRATED-CONTRACT-PLAN.md for the shared trimmed, case-insensitive
+call-ID lookup and manifest recovery contract used by Task 3. A missing
+call uses the shared project message "Port call not found."; an unavailable
+or unusable manifest uses "Manifest unavailable." as a consistency policy.
+These are not new PDF-mandated Task 7 strings. Validate event_codes as a
+list of strings; preserve its order and pass it unchanged to the sliding
+window helper. Keep the strict-greater winner update so the first tied
+maximum remains selected.
+
+For a valid empty event_codes list, print exactly
+"Longest stable sequence length: 0" followed by "Sequence: " with the
+required prefix and no sequence text. This is the agreed project policy for
+the previously unspecified empty-list display. The two mandated non-empty
+output lines and all user decisions in Section 2 remain unchanged.

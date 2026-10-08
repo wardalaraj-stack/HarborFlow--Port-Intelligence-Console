@@ -1,0 +1,62 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 0: BUILD THE PRODUCT SHELL
+
+Business outcome
+Give port staff one stable entry point and protect the shift from file and
+input failures.
+
+Goal
+Create a persistent main menu that dispatches each choice to its own service,
+returns after every service, and closes normally only through option 10.
+
+Exact menu
+Print this menu every time the main menu is shown:
+
+HARBORFLOW PORT INTELLIGENCE
+1. List registered vessels
+2. Inspect a vessel manifest
+3. Identify priority cargo
+4. Export a customer operations profile
+5. Find port calls by month
+6. Sanitize an incident report
+7. Analyze the longest stable event sequence
+8. Assess weather risk for upcoming calls
+9. Search incident reports
+10. Close console
+Select service:
+
+Required behavior
+- Implement main() with a loop-state variable and a persistent loop.
+- Accept integer choices from 1 through 10. Reject non-integer and
+  out-of-range input with exactly:
+  Error - Select a service from 1 to 10.
+- Ask for the choice again after invalid input; do not return to the menu
+  until a valid choice has been collected.
+- Dispatch options 1-9 to separate service functions. Keep feature logic out
+  of the menu branches.
+- After each service or recoverable error, return to the menu.
+- Do not use exit() or break to stop the console. Option 10 changes the loop
+  state so the loop ends and prints exactly once:
+  Console closed. HarborFlow operational data remains safe.
+- Start the product by calling main() under the __main__ guard.
+- Catch FileNotFoundError, json.JSONDecodeError, csv.Error and ValueError only
+  at useful file/conversion boundaries. Do not use a blanket except clause.
+
+Suggested flow
+main()
+    set console_active to True
+    while console_active:
+        print the menu
+        collect and validate a choice
+        dispatch to the selected service
+        for option 10, set console_active to False
+    print the exact closing message
+
+Testing checklist
+[ ] Menu appears first and matches the required text and order.
+[ ] Non-integer text, 0, 11, and negative values show the exact error and
+    prompt again without crashing.
+[ ] Each option 1-9 calls its service and returns to the menu.
+[ ] Recoverable service errors return to the menu.
+[ ] Option 10 closes normally and prints the closing message exactly once.
+[ ] No service closes the program; no exit() or break is used for closure.

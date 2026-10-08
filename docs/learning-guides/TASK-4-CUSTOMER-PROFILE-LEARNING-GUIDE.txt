@@ -1,0 +1,102 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 4: CUSTOMER PROFILE EXPORT - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to aggregate shipment records for one customer and safely create or
+update a persistent CSV row. This guide teaches the design; it does not supply
+a finished implementation.
+
+Use beside: BluePrints_2/05-CUSTOMER-PROFILE-EXPORT-DETAILS.txt
+
+What you are learning
+- How to scan many shipment records and maintain running totals.
+- How to compare customer names without changing their display spelling.
+- How CSV readers and writers handle rows and headers.
+- Why updating a file safely often means reading, editing in memory, then
+  rewriting.
+- How to avoid modifying an export when there is no matching customer.
+
+Terms, functions, exceptions and data structures
+- csv.DictReader: reads CSV rows as dictionaries keyed by column names.
+- csv.DictWriter: writes dictionaries as CSV rows and can write a header.
+- Dict: a mapping from a CSV field name to that row's value.
+- List: an ordered collection. A temporary list can hold existing export rows
+  while you update one customer and preserve everyone else.
+- Set: a collection of unique values. It can help remove duplicate destination
+  codes before sorting them.
+- strip() and casefold(): clean surrounding whitespace and compare names
+  without case differences. Preserve a source customer name for output.
+- float(): converts a numeric weight string into a number. Invalid text raises
+  ValueError; keep conversion handling focused on the relevant field.
+- sorted(): returns destination codes in a stable alphabetical order.
+- join(): combines destination strings with the required | separator.
+- format/f-string formatting: displays total weight with exactly two decimal
+  places without changing the stored calculation.
+- newline="": a file-opening setting used with the csv module so it can manage
+  CSV newline handling correctly on different platforms.
+- FileNotFoundError, csv.Error, ValueError: expected file, CSV parsing and
+  numeric conversion failures. Catch these only where a useful response exists.
+
+Plan the data flow
+1. Read all valid shipment records.
+2. Normalize the requested customer name for comparison.
+3. Collect every matching shipment and compute count, total weight, express
+   count and unique destinations.
+4. If there were no matches, print Customer not found. and stop before opening
+   the export for writing.
+5. Read existing export rows if the file exists.
+6. Add a row for a new customer or replace the matching existing row.
+7. Write the exact header once and preserve all unrelated rows.
+
+Learning steps
+
+Step 1: Separate matching from aggregation
+Use a comparison form of the input name: strip outside spaces and compare
+case-insensitively. Keep the dataset's customer spelling for the output row so
+the export retains a useful canonical display name.
+
+Step 2: Keep totals explicit
+As you loop over matching records, update the shipment count, total weight and
+express count. Add destination codes to a unique collection. Test each total
+independently before combining them into the final row.
+
+Step 3: Build the row before writing
+Finish all matching and calculations first. If no shipment matches, return
+without creating or changing customer-profiles.csv. This no-write rule is
+important: an unsuccessful search must not create an empty export.
+
+Step 4: Understand first write versus update
+On the first write, create the parent exports directory if it is absent, write
+the header, then write the profile. For a new customer in an existing file,
+append one row without repeating the header. For an existing customer, read all
+rows into a temporary list, replace only its row, then rewrite the file with
+one header. Compare customer names without case when finding an existing row.
+
+Step 5: Let the CSV library quote fields
+Use the CSV module rather than joining columns by hand. A customer name or
+other text may contain punctuation; the CSV writer handles quoting and commas.
+The destinations field itself uses | between sorted codes.
+
+Step 6: Format at the boundary
+Keep weight numeric while adding it. Convert it to a two-decimal string when
+building the output row. Do not round each shipment before totaling unless the
+PDF or data dictionary explicitly requires it.
+
+Reasoning questions
+- Why must the no-match check happen before any write operation?
+- Which records should remain unchanged when one customer's row is replaced?
+- Why must a CSV header be written only once?
+- Why use the csv module instead of manually inserting commas?
+- Is the set/list used for calculation data or just unique destinations?
+
+Test checklist
+[ ] Matching strips input spaces and ignores customer-name case.
+[ ] Every valid shipment for the customer contributes to the totals.
+[ ] Destinations are unique, sorted and joined with |.
+[ ] Total weight is formatted to exactly two decimals.
+[ ] First write creates the correct header and row.
+[ ] A second customer is added without duplicating the header.
+[ ] Updating one customer preserves other rows and creates no duplicate.
+[ ] An unknown customer prints the exact message and leaves the export
+    unchanged and uncreated.
+[ ] The resulting CSV can be loaded again.

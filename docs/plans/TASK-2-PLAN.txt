@@ -1,0 +1,453 @@
+TASK 2 PLAN — HarborFlow Port Intelligence Console: Inspect a Vessel Manifest
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-27
+
+================================================================
+1. SCOPE AND PLANNING EVIDENCE
+================================================================
+
+Scope and evidence (no approval claimed):
+This plan covers Task 2 only — "Inspect a vessel manifest" (menu option 2).
+It proposes no application code changes; main.py, data_access.py,
+operations.py, and text_tools.py were opened strictly read-only for
+inspection of existing structure (all four are still stubs/placeholders;
+Task 1's plan exists but its code has not yet been written, which is a
+pre-existing project-state fact noted here for context only, not something
+this plan touches or fixes). It imports no "Assignment 1" content and makes
+no reference to any other assignment or unrelated codebase. It does not
+propose touching any protected file: dataset/vessels/*.json,
+dataset/manifests/*.json, dataset/shipments/*.json, dataset/port_calls.csv,
+test-ledger.csv, readme.txt, and START-HERE.txt were all opened strictly
+read-only for evidence (confirming the intentionally missing SHP-1051 link
+referenced by manifest HFL-GOT-2048, and the intentionally invalid calendar
+date 2026-02-30 on call HFL-BAD-9999). File-scope statements in this
+section describe the original Task 2 drafting pass. The coordinated
+revision edits planning documents only; it does not modify application
+code, source data, test-ledger.csv, or readme.txt. No project commands,
+tests, or builds were run as part of this plan revision.
+
+Design considerations (not a review approval):
+The design below (Section 3) satisfies every literal requirement: (a) vessel
+name input is trimmed of surrounding whitespace and matched against
+vessel["name"] case-insensitively (casefold comparison, not exact string
+equality) before filtering port_calls.csv rows by the resolved vessel_id;
+(b) among that vessel's calls, an arrival_date is only a candidate if it
+parses as a valid ISO calendar date (datetime.date.fromisoformat, or
+equivalent strict parsing) AND is >= the reference date — this naturally
+excludes HFL-BAD-9999 (2026-02-30, not a real calendar day) from
+consideration without needing a separate "skip invalid call dates" branch,
+since an unparseable date simply never becomes a candidate; (d) the
+tie-break rule is explicit and total: primary key = arrival_date ascending,
+secondary key = call_id ascending (string/alphabetical), so ties on date are
+broken deterministically by picking min(candidates, key=lambda c:
+(c.arrival_date, c.call_id)) — this is checked even though today's sample
+data for VSL-002 (Nordic Relay: HFL-GOT-2048 on 2026-10-18, HFL-OSL-2090 on
+2026-11-05) does not itself produce a same-vessel same-date tie, so the
+logic must be verified by reasoning/construction rather than by the shipped
+dataset alone (flagged again below); (e) manifest lookup is by call_id
+(reading dataset/manifests/*.json and matching the call_id field inside the
+file, per the "do not assume filenames equal business identifiers" rule —
+i.e. NOT by assuming a manifest filename maps to a call_id), then every
+shipment_id in manifest["shipment_ids"] is resolved in manifest order
+against dataset/shipments (again by reading and comparing shipment_id
+inside each file, not by filename); (f) a shipment_id with no matching
+record anywhere in dataset/shipments prints "MISSING RECORD" on that
+numbered line and increments a missing-count without incrementing the
+resolved-weight total; (g) optional shipment fields (hazardous,
+temperature_controlled, cargo_type) default per the data dictionary:
+missing or null hazardous/temperature_controlled values are treated as
+false, and missing or null cargo_type prints "NOT PROVIDED". Project policy
+based on the demonstrated output: the manifest line prints customer,
+weight, and cargo_type only; hazardous and temperature_controlled remain in
+the record for Task 3 but are not printed by Task 2; (h) all four spec
+error/edge cases map to
+distinct, non-overlapping branches: invalid date format (re-prompt loop,
+stays on Task 2), unknown vessel (return to menu), no qualifying call
+(return to menu), unreadable/malformed manifest for the selected call
+(return to menu) — the plan keeps these as four separate checks rather than
+collapsing any two, because their exact printed strings and control-flow
+targets differ (one re-prompts, three return to menu).
+Risks/ambiguities flagged for the implementer:
+ - Shared loader contract: use `load_vessels(directory)` and its
+   `LoadResult` from INTEGRATED-CONTRACT-PLAN.md for both the registered
+   vessel display and name-to-vessel_id resolution. The former provisional
+   interface wording is superseded; Task 2 does not define a second vessel
+   loader or await implementation-time interface selection.
+ - Tasks 2, 3, 4, 5, 7, and 8 use the shared `LoadResult` loaders in
+   INTEGRATED-CONTRACT-PLAN.md. CSV dates remain source strings, and
+   operations select by internal business IDs from loaded `.records`;
+   no task adds a separate directory walk or CSV parser.
+ - Date parsing consistency with Tasks 5 and 8: Task 2 needs (i) strict
+   validation of user-typed reference dates (reject anything not matching
+   YYYY-MM-DD as a real calendar date) and (ii) tolerant parsing of
+   port_calls.csv arrival dates (treat an unparseable/invalid calendar date
+   as simply not a candidate, without crashing the program) and (iii)
+   presentation formatting of the chosen call's arrival_date as
+   "D Month YYYY" via datetime (e.g. "18 October 2026"). Tasks 5 and 8 will
+   also need to parse the same arrival_date column; whichever parsing
+   helper is written first (in data_access.py or operations.py) should be
+   reused rather than reimplemented, provided its error behavior (raise vs.
+   return None on an invalid calendar date) suits Task 2's "skip, don't
+   crash" requirement for candidate filtering.
+ - The manifest's own required fields (call_id, vessel_id, shipment_ids,
+   event_codes per DATA-DICTIONARY.md) must all be present and call_id must
+   equal the selected call's call_id for the manifest to count as "readable
+   valid"; a manifest file that parses as JSON but is missing shipment_ids,
+   or a manifest whose file cannot be found/parsed for the selected call_id
+   at all, both fall under "Manifest unavailable." — the plan treats these
+   as one combined failure mode per the spec's single error string, not two.
+ - event_codes is loaded/validated as part of manifest read-in (its presence
+   is required by the data dictionary) but is not used or printed by Task 2
+   itself; it exists in the manifest purely for Task 7's later reuse.
+These are design notes and integration decisions, not a claim of reviewer
+approval.
+
+Acceptance criteria (planned, not run):
+Section 4 below lists concrete, checkable acceptance criteria mapping
+directly onto the assignment's acceptance-test-campaign "Relationships" row
+already present in test-ledger.csv line 3 ("Missing shipment" / "Inspect
+Nordic Relay from 2026-10-18" / "Missing record counted without crash",
+currently status="Not run"). That row's exact scenario (Nordic Relay,
+reference date 2026-10-18) is confirmed reproducible against the real
+dataset: port_calls.csv row 3 (HFL-GOT-2048, VSL-002, GOT, 2026-10-18)
+matches vessel VSL-002 = Nordic Relay (dataset/vessels/nordic-relay.json),
+its manifest (dataset/manifests/hfl-got-2048.json) lists shipment_ids
+["SHP-1042", "SHP-1051"], SHP-1042 resolves to a real shipment file
+(dataset/shipments/shipment-1042.json: customer "Norra MedTech AB", weight
+860.0 kg, cargo_type "REFRIGERATED") and SHP-1051 has no corresponding file
+anywhere in dataset/shipments, confirming the missing-record case exactly
+as the assignment's own worked example shows. The plan's Section 4 also
+covers: an unknown vessel name (any input not matching any registered
+vessel's name case-insensitively), a reference date with no qualifying call
+for a known vessel, an invalid date format string, a tie on date (verified
+by construction since the shipped data does not itself produce one for a
+single vessel), and an unreadable/malformed manifest for the selected call
+(no such sample file exists today for a *valid* call_id, so this path must
+be exercised via a temporary local test file/mock, not by adding a file to
+the protected dataset/manifests directory). This plan does not mark Task 2
+as validated or passed; it only defines what a future test run must check,
+matching the "Relationships" row's intent. No test result is claimed.
+
+No project tests, builds, or reviewer approvals are claimed by this plan
+revision.
+
+================================================================
+2. TASK 2 REQUIREMENT SUMMARY (verbatim from assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Connect a scheduled port call to its vessel and cargo
+instead of reading files in isolation.
+
+Display registered vessels, ask for a vessel name and a reference date in
+YYYY-MM-DD format. Remove surrounding spaces from the name and match it
+case-insensitively. Filter port calls to that vessel, then locate the
+earliest call on or after the reference date. Load the matching manifest
+through call_id, then resolve every shipment_id against dataset/shipments.
+Print the call, totals and cargo lines in manifest order. A missing
+shipment is listed as MISSING RECORD and counted separately. If several
+calls share the earliest date, choose the call with the alphabetically
+smallest call_id. For an invalid date, print
+"Error - Date must use YYYY-MM-DD." and repeat only the date prompt. For an
+unknown vessel, print "Vessel not found." If no qualifying call exists,
+print "No upcoming port calls found." If the selected call has no readable
+valid manifest, print "Manifest unavailable." In these three cases, return
+to the menu.
+
+Exact example output (client contract — copy verbatim, only the data
+varies):
+  Vessel name: Nordic Relay
+  Manifest for Nordic Relay | Call HFL-GOT-2048 | 18 October 2026
+  1. SHP-1042 | Norra MedTech AB | 860.0 kg | REFRIGERATED
+  2. SHP-1051 | MISSING RECORD
+  Declared shipments: 2
+  Resolved weight: 860.00 kg
+  Missing shipment records: 1
+
+Notes on the exact format (client contract, byte-for-byte aside from
+variable data):
+- "Vessel name: " is the input prompt echo shown in the transcript (the
+  program's actual input() prompt string; not itself a print()).
+- Header line: "Manifest for {vessel name as stored, e.g. proper case from
+  the vessel record} | Call {call_id} | {D Month YYYY}" — single spaces
+  around each "|", literal "Manifest for " and " | Call " tokens.
+- Each cargo line: "{n}. {shipment_id} | {customer} | {weight_kg} kg |
+  {cargo_type or NOT PROVIDED}" for a resolved shipment, using 1-based
+  manifest-order numbering; OR "{n}. {shipment_id} | MISSING RECORD" for an
+  unresolved shipment_id — note the missing-record line has only two
+  "|"-delimited segments (index+id, then the literal token), not four.
+- weight_kg is printed as its raw/natural value (the example shows "860.0
+  kg", i.e. Python's default float-to-string rendering, not forced to two
+  decimals on this line — contrast with the summary's "Resolved weight"
+  line below, which IS forced to two decimals).
+- "Declared shipments: {n}" = len(manifest["shipment_ids"]), counting every
+  entry regardless of whether it resolved.
+- "Resolved weight: {sum:.2f} kg" = sum of weight_kg over only the
+  successfully resolved shipments, formatted to exactly two decimal places
+  (":.2f"), even though individual cargo lines above are not forced to two
+  decimals.
+- "Missing shipment records: {n}" = count of shipment_ids with no matching
+  shipment file/record, i.e. Declared shipments - (number of resolved
+  cargo lines).
+- Error strings, printed verbatim with no extra text:
+    Error - Date must use YYYY-MM-DD.
+    Vessel not found.
+    No upcoming port calls found.
+    Manifest unavailable.
+- Optional-field handling (from DATA-DICTIONARY.md, applied to each
+  resolved shipment): missing/absent hazardous or temperature_controlled
+  is treated as false; missing/absent cargo_type prints the literal token
+  "NOT PROVIDED" in the cargo_type position of the cargo line.
+
+================================================================
+3. PROPOSED DESIGN
+================================================================
+
+Module responsibilities (use the shared interfaces in
+INTEGRATED-CONTRACT-PLAN.md):
+
+data_access.py:
+- load_vessels(directory) -> shared LoadResult
+    Reuse the shared valid records and structured diagnostics defined in
+    INTEGRATED-CONTRACT-PLAN.md to display vessels and resolve the typed
+    vessel name. Do not add a second vessel parser.
+- load_port_calls(path) -> shared LoadResult
+    Reads port_calls.csv through the common CSV loader, validates its
+    required header, preserves arrival_date source strings and row context,
+    and propagates fatal CSV/schema/I/O errors. Each operation validates
+    full dates independently so one invalid row does not suppress others.
+- load_manifests(directory) -> shared LoadResult and
+  load_shipments(directory) -> shared LoadResult
+    Load each directory once in sorted source-path order. Operations select
+    records by their internal IDs, never by filenames. A manifest is usable
+    only when its call_id and vessel_id match the selected call and its
+    required shipment_ids/event_codes are string lists. Shipment lookup
+    selects the first valid matching shipment from the one loaded result.
+    Keep all diagnostics attached to the results. If no usable matching
+    manifest exists, Task 2 prints the exact "Manifest unavailable."
+    message; unresolved shipment references print/count "MISSING RECORD".
+
+operations.py:
+- parse_reference_date(text) -> datetime.date | raises ValueError
+    Validate exact YYYY-MM-DD shape and a real date before returning
+    datetime.date; any ValueError is caught by the caller (main.py's prompt
+    loop) to print
+    "Error - Date must use YYYY-MM-DD." and re-prompt only for the date
+    (the vessel name is not re-asked).
+- resolve_vessel(name, vessels) -> dict | None
+    Trims name.strip(), compares against each vessel["name"].strip() using
+    .casefold() equality (not substring/partial match), returns the first
+    match or None. Returns None -> caller prints "Vessel not found." and
+    returns to menu.
+- select_call(calls, vessel_id, reference_date) -> dict | None
+    Filters calls to matching vessel_id, then to those whose arrival_date
+    parses as a valid calendar date (invalid dates such as
+    HFL-BAD-9999's "2026-02-30" are excluded here via a try/except around
+    the per-row date parse — an unparseable row is treated as "not a
+    candidate," never as a crash) AND parsed_date >= reference_date. If the
+    resulting candidate list is empty, returns None (caller prints
+    "No upcoming port calls found." and returns to menu). Otherwise returns
+    min(candidates, key=lambda c: (parsed_date(c), c["call_id"])) — i.e.
+    earliest arrival_date first, alphabetically smallest call_id breaks any
+    tie on date. This is a pure function over already-loaded data, easily
+    unit-testable with constructed tie-producing fixtures independent of
+    the shipped dataset.
+- build_manifest_report(vessel, call, manifest, shipment_records)
+      -> dict (or a small dataclass/named tuple) containing: vessel name,
+    call_id, formatted date string, an ordered list of per-line results
+    (each either a resolved-shipment tuple or a MISSING_RECORD marker),
+    declared_count, resolved_weight_total, missing_count. Iterates
+    manifest["shipment_ids"] in file order (not resorted), selecting each ID
+    from the shared `load_shipments(...).records`; on no match, appends a
+    MISSING_RECORD marker and increments missing_count; on a resolved
+    record, applies optional-
+    field defaults (hazardous = record.get("hazardous", False),
+    temperature_controlled = record.get("temperature_controlled", False),
+    cargo_type = ("NOT PROVIDED" if record.get("cargo_type") is None
+                  else record["cargo_type"])) and adds
+    weight_kg to resolved_weight_total. This function is pure
+    business logic (no print()), so it stays unit-testable; main.py (or a
+    thin operations.py print helper) is responsible for the actual
+    print() calls using the exact strings from Section 2.
+- format_call_date(arrival_date_str) -> str
+    datetime.date.fromisoformat(arrival_date_str).strftime("%d %B %Y"),
+    then strip a leading zero from the day (e.g. "18 October 2026" not
+    "18 October 2026" with a leading 0 — %d zero-pads to "08" for single-
+    digit days, so a leading-zero strip such as
+    result.lstrip("0") applied only to the day portion, or building the
+    string manually as f"{date.day} {date.strftime('%B %Y')}", is required
+    to match the example's un-padded day). This helper is also the natural
+    reuse candidate for Tasks 5/8 if they need the same "D Month YYYY"
+    presentation.
+
+main.py:
+- In the `elif selection == 2:` branch: (1) load vessels, calls, manifests,
+  and shipments through the shared result contract, retaining all
+  recoverable diagnostics for task-appropriate reporting; load and print
+  the registered
+  vessels list (reusing Task 1's exact display, per spec's "Display
+  registered vessels" instruction — this is not a new format, it is a call
+  into whatever Task 1's implementation exposes); (2) prompt
+  "Vessel name: ", trim+resolve via operations.resolve_vessel — on None,
+  print "Vessel not found." and fall through to the outer menu loop
+  (`continue`/normal fallthrough, no re-prompt); (3) loop prompting for the
+  reference date until parse_reference_date succeeds, printing
+  "Error - Date must use YYYY-MM-DD." and re-prompting on each failure
+  (this inner loop is scoped to the date only, per spec's "repeat only the
+  date prompt"); (4) call operations.select_call — on None, print
+  "No upcoming port calls found." and return to menu; (5) select the first
+  usable manifest matching both call_id and vessel_id from the shared
+  manifest records — if none, print
+  "Manifest unavailable." and return to menu; (6) build and print the full
+  report via operations.build_manifest_report, formatting each line exactly
+  per Section 2.
+- The date sub-loop catches only ValueError from the user's date input.
+  Recoverable record diagnostics remain available to operations; fatal
+  source/CSV/schema/I/O errors propagate to an explicit, narrowly scoped
+  service error path. Do not use a blanket `except:` or show an empty
+  successful report after a fatal loader error.
+
+Tie-break logic (explicit, restated): sort key =
+(parsed_arrival_date, call_id) ascending; Python tuple comparison already
+implements "earliest date first, then alphabetically smallest call_id" in
+one expression, so no separate two-pass sort is needed.
+
+Shipment resolution and MISSING RECORD counting (explicit, restated):
+declared_count = len(shipment_ids) as listed in the manifest (order
+preserved); for each id, exactly one of (resolved -> add to resolved list,
+add its weight_kg to the running total) or (not resolved -> add a
+MISSING RECORD marker, increment missing_count) happens; at the end,
+missing_count must equal declared_count - len(resolved list) as an internal
+consistency check the implementer can assert in tests.
+
+Optional-field defaults (explicit, restated): hazardous and
+temperature_controlled default to False when the key is absent OR present
+as JSON null (same "absent-or-null both fail to a default" treatment used
+for Task 1's required-field validation, applied here to optional booleans
+instead of rejecting the record); cargo_type defaults to the literal string
+"NOT PROVIDED" when the key is absent OR its value is JSON null, while an
+empty string remains valid string data and is preserved.
+
+================================================================
+4. ACCEPTANCE CRITERIA CHECKLIST
+================================================================
+
+[ ] Normal case with a missing shipment link (matches test-ledger.csv's
+    "Relationships" row exactly): vessel name "Nordic Relay", reference
+    date "2026-10-18" -> resolves to VSL-002, filters to calls
+    HFL-GOT-2048 (2026-10-18) and HFL-OSL-2090 (2026-11-05), both >=
+    reference date, earliest is HFL-GOT-2048; manifest shipment_ids are
+    ["SHP-1042", "SHP-1051"]; output must be exactly:
+      Manifest for Nordic Relay | Call HFL-GOT-2048 | 18 October 2026
+      1. SHP-1042 | Norra MedTech AB | 860.0 kg | REFRIGERATED
+      2. SHP-1051 | MISSING RECORD
+      Declared shipments: 2
+      Resolved weight: 860.00 kg
+      Missing shipment records: 1
+
+[ ] Unknown vessel: a typed name not matching any registered vessel
+    (case-insensitively, after trimming) prints exactly
+    "Vessel not found." and returns to the menu without prompting for a
+    date at all (name is resolved before the date loop begins).
+
+[ ] Invalid date input: a typed reference date that is not a real
+    YYYY-MM-DD calendar date (e.g. "2026-13-40", "18-10-2026", "not a date")
+    prints exactly "Error - Date must use YYYY-MM-DD." and re-prompts only
+    the date, without re-asking for the vessel name and without returning
+    to the menu; a subsequently valid date must proceed normally.
+
+[ ] No qualifying call: a known vessel whose every call's arrival_date is
+    strictly before the reference date (or has no calls at all) prints
+    exactly "No upcoming port calls found." and returns to the menu. (Not
+    directly reproducible against today's exact sample without picking a
+    reference date after a given vessel's last valid call — e.g. Baltic
+    Pioneer/VSL-001 with a reference date after 2026-11-12 — confirmed
+    constructible from the existing port_calls.csv without needing new
+    data.)
+
+[ ] Manifest unavailable: the selected call_id has no matching, readable,
+    fully-keyed manifest file. (No sample call_id in the shipped dataset
+    currently exercises this for a call that would otherwise be selected —
+    the implementer/tester should exercise this via a temporary local
+    mock/test fixture rather than editing the protected dataset/manifests
+    directory.) Must print exactly "Manifest unavailable." and return to
+    the menu without raising.
+
+[ ] Tie on date: two calls for the SAME vessel sharing the identical
+    earliest qualifying arrival_date must be broken by alphabetically
+    smallest call_id. (Not present in the shipped port_calls.csv for any
+    single vessel today — HFL-GOT-2048/2026-10-18 and HFL-AAR-2071/
+    2026-10-18 share a date but belong to different vessels, VSL-002 vs.
+    VSL-003 — so this must be verified via a constructed local test
+    fixture, e.g. two synthetic in-memory call dicts with the same
+    vessel_id and arrival_date but different call_id, fed directly to
+    operations.select_call.)
+
+[ ] Invalid call-date row does not crash or get selected: HFL-BAD-9999
+    (vessel VSL-003, arrival_date "2026-02-30", not a real calendar day)
+    must never be chosen as a candidate and must not raise an uncaught
+    exception when its vessel (Skagerrak Star) is inspected; it should
+    simply be excluded from the candidate set as if absent.
+
+[ ] Cargo-line formatting exactness: resolved lines match
+    "{n}. {shipment_id} | {customer} | {weight_kg} kg | {cargo_type}"
+    (weight_kg printed in its natural/raw form, not forced to 2 decimals);
+    missing lines match "{n}. {shipment_id} | MISSING RECORD" (only two
+    segments); numbering is 1-based and follows manifest shipment_ids
+    order, not any resorting by id or customer.
+
+[ ] Optional-field defaults: a resolved shipment record lacking
+    hazardous/temperature_controlled is treated as false for those fields
+    (not printed on the cargo line per the current one-example reading, but
+    available internally); a resolved shipment record lacking cargo_type
+    prints "NOT PROVIDED" in the cargo_type slot of its cargo line.
+
+[ ] Summary lines exactness: "Declared shipments: {n}" (raw int, no
+    decimals), "Resolved weight: {sum:.2f} kg" (exactly two decimals,
+    always, even for a whole-number sum), "Missing shipment records: {n}"
+    (raw int) — all three printed unconditionally in that order after the
+    last cargo line.
+
+[ ] Corresponds to test-ledger.csv row 3 ("Relationships" / "Missing
+    shipment" / "Inspect Nordic Relay from 2026-10-18" / "Missing record
+    counted without crash"), currently status="Not run" — implementation
+    should make that row checkable/passable, though updating
+    test-ledger.csv itself is out of scope for this planning task.
+
+[ ] CodeGrade-alternate-data safety: the implementation must not hard-code
+    "Nordic Relay", "SHP-1042", "SHP-1051", "HFL-GOT-2048", or any other
+    sample identifier/value anywhere in the code path; all output must be
+    derived purely from parsing dataset/vessels, dataset/port_calls.csv,
+    dataset/manifests, and dataset/shipments at runtime, and from the
+    user's typed input, per START-HERE.txt rule 7.
+
+================================================================
+5. SHARED INTERFACE CONTRACT
+================================================================
+
+INTEGRATED-CONTRACT-PLAN.md is canonical for root paths, `LoadResult`
+shapes, data validation, diagnostics, duplicate handling, and fatal errors.
+Task 2 uses `.records` from the shared vessel, port-call, manifest, and
+shipment results; it parses date strings in operations and selects records
+by internal IDs. Task-specific exact messages and missing-shipment handling
+remain as stated in Sections 2-4.
+
+================================================================
+6. INTEGRATION CONTRACT UPDATE
+================================================================
+
+Use INTEGRATED-CONTRACT-PLAN.md as the canonical shared interface. It
+supersedes this plan's provisional tuple/count loader shapes and any
+silent-swallowing alternatives. Directory loaders return valid records
+plus structured diagnostics; recoverable malformed records are skipped
+with diagnostics, while fatal directory, CSV, schema, and I/O errors
+propagate explicitly. load_json reads one JSON object and propagates
+single-file errors.
+
+The port-call loader retains source arrival_date strings, and Task 2 parses
+dates in its operation. Select the earliest valid call on or after the
+reference date, breaking equal-date ties by ascending call_id. Empty
+shipment_ids and event_codes lists are valid; a missing shipment reference
+still prints/counts MISSING RECORD in manifest order. A matching manifest
+must be valid under the shared record shape; if none is usable, retain the
+exact mandated "Manifest unavailable." output. Paths come from the common
+project root, not the process working directory.

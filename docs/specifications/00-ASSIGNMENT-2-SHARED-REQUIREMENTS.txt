@@ -1,0 +1,85 @@
+HARBORFLOW LOGISTICS AB
+ASSIGNMENT 2: SHARED REQUIREMENTS
+PORT INTELLIGENCE CONSOLE
+
+Purpose
+Use this guide with the individual Task 0-9 files. The Assignment 2 PDF is
+authoritative if a task guide and the PDF appear to disagree.
+
+Project and entry point
+- Run the integrated console from the project root with: python main.py
+- Keep the supplied project structure and use relative paths rooted at the
+  project directory. Do not use a student's machine-specific absolute path.
+- Suggested responsibilities:
+  main.py         menu and orchestration
+  data_access.py  JSON/CSV loading, validation and paths
+  operations.py   manifests, classification, forecasts and exports
+  text_tools.py   regex sanitization, event sequence and search index
+- Keep file access out of menu branches. Use reusable functions with clear
+  responsibilities; the suggested module boundaries may be adapted.
+
+Permitted scope
+- Use Python's standard library, including json, csv, re, pathlib and datetime.
+- Third-party packages such as pandas are not permitted.
+- Dictionaries and lists are appropriate for records and relationships.
+- Do not hard-code the supplied example records. CodeGrade may provide
+  additional or replacement data.
+
+Dataset and file handling
+- Read source records from dataset/ and connect them by business identifiers,
+  not assumed filename patterns.
+- The supplied dataset intentionally includes malformed or missing records.
+  Do not repair or delete them; report and skip or handle them as the task says.
+- Task 9 may create or refresh dataset/incident-index.json. Other persistent
+  product outputs belong under exports/.
+- Catch FileNotFoundError, json.JSONDecodeError, csv.Error and ValueError only
+  at boundaries where the product can give a useful response. Avoid blanket
+  except clauses that hide programming defects.
+- After a recoverable error, return safely to the persistent menu.
+
+Shared console contract (Task 0)
+Print this menu each time it is shown, preserving text and order:
+
+HARBORFLOW PORT INTELLIGENCE
+1. List registered vessels
+2. Inspect a vessel manifest
+3. Identify priority cargo
+4. Export a customer operations profile
+5. Find port calls by month
+6. Sanitize an incident report
+7. Analyze the longest stable event sequence
+8. Assess weather risk for upcoming calls
+9. Search incident reports
+10. Close console
+Select service:
+
+- Reject non-integer and out-of-range menu input with exactly:
+  Error - Select a service from 1 to 10.
+- Use a loop-state variable. Do not use exit() or break to close the console.
+- Return to the menu after services and recoverable errors. Option 10 is the
+  normal close action and prints exactly:
+  Console closed. HarborFlow operational data remains safe.
+
+Submission and handover
+- Create one CodeGrade group with exactly 3-4 students.
+- Submit main.py and every Python module imported by the product.
+- Submit readme.txt with member names, concrete contributions, architecture,
+  run instructions and known limitations.
+- Maintain test-ledger.csv with normal, boundary, missing-data and
+  malformed-data test evidence.
+- Do not submit modified copies of the supplied dataset unless CodeGrade asks.
+- Prompts, punctuation, capitalization, ordering, filenames and output formats
+  are part of the contract.
+
+Minimum acceptance evidence
+- Missing file, malformed JSON, invalid CSV number and mixed valid/invalid
+  records.
+- Known identifiers, missing linked shipments and unknown vessel/customer.
+- First export, additional customer, updating an existing row and reloading CSV.
+- Each sensitive regex pattern alone, multiple patterns together and no match.
+- Event sequence: all unique, immediate repeat, repeat outside active window,
+  and equal-length tie.
+- Weather thresholds individually and combined, plus absent forecast.
+- Search: one word, repeated query word, no match and corrupt-cache rebuild.
+- Run from a clean project folder using only relative paths and verify generated
+  CSV/JSON outputs can be loaded on a later run.

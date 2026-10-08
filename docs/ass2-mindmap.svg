@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2229" height="1820" viewBox="-1014 -940 2229 1820">
+<rect x="-1014" y="-940" width="2229" height="1820" fill="#ffffff"/>
+<g>
+<path d="M 0.0 0.0 C -25.4 73.3 -31.0 89.6 -56.4 162.8" fill="none" stroke="#2563eb" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(289.09) translate(-172.3,0)" text-anchor="end" font-size="19" font-weight="700" fill="#2563eb" font-family="Segoe UI, Helvetica, Arial, sans-serif">Project setup</text>
+<path d="M -56.4 162.8 C -102.0 294.7 -71.3 335.4 -100.3 471.9" fill="none" stroke="#2563eb" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(282.00) translate(-482.4,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#2563eb" font-family="Segoe UI, Helvetica, Arial, sans-serif">Run: python main.py (project root)</text>
+<path d="M -56.4 162.8 C -108.0 312.0 -105.1 349.7 -150.5 500.9" fill="none" stroke="#2563eb" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(286.73) translate(-523.0,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#2563eb" font-family="Segoe UI, Helvetica, Arial, sans-serif">Relative paths only - no absolute paths</text>
+<path d="M -56.4 162.8 C -97.2 280.9 -118.9 302.5 -164.6 418.7" fill="none" stroke="#2563eb" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(291.45) translate(-449.9,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#2563eb" font-family="Segoe UI, Helvetica, Arial, sans-serif">Keep supplied folder structure</text>
+<path d="M -56.4 162.8 C -104.4 301.6 -155.2 315.7 -220.0 447.5" fill="none" stroke="#2563eb" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(296.18) translate(-498.6,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#2563eb" font-family="Segoe UI, Helvetica, Arial, sans-serif">data/ read-only, outputs -&gt; exports/</text>
+<path d="M 0.0 0.0 C -41.6 53.2 -50.8 65.0 -92.3 118.2" fill="none" stroke="#0891b2" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(308.00) translate(-150.0,0)" text-anchor="end" font-size="19" font-weight="700" fill="#0891b2" font-family="Segoe UI, Helvetica, Arial, sans-serif">Modules</text>
+<path d="M -92.3 118.2 C -169.3 216.6 -155.5 259.7 -219.6 366.9" fill="none" stroke="#0891b2" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(300.91) translate(-427.6,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0891b2" font-family="Segoe UI, Helvetica, Arial, sans-serif">main.py - menu + orchestration</text>
+<path d="M -92.3 118.2 C -194.0 248.3 -205.0 285.9 -301.2 420.1" fill="none" stroke="#0891b2" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(305.64) translate(-516.9,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0891b2" font-family="Segoe UI, Helvetica, Arial, sans-serif">data_access.py - load + validate JSON/CSV</text>
+<path d="M -92.3 118.2 C -194.0 248.3 -227.8 268.1 -334.8 393.9" fill="none" stroke="#0891b2" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(310.36) translate(-516.9,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0891b2" font-family="Segoe UI, Helvetica, Arial, sans-serif">operations.py - manifests, rules, exports</text>
+<path d="M -92.3 118.2 C -187.3 239.7 -239.7 238.9 -348.8 347.7" fill="none" stroke="#0891b2" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(315.09) translate(-492.6,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0891b2" font-family="Segoe UI, Helvetica, Arial, sans-serif">text_tools.py - regex, sequence, index</text>
+<path d="M 0.0 0.0 C -93.5 50.5 -114.3 61.7 -207.8 112.2" fill="none" stroke="#ea580c" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(331.64) translate(-236.2,0)" text-anchor="end" font-size="19" font-weight="700" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Intentional defects</text>
+<path d="M -207.8 112.2 C -288.8 155.9 -266.4 225.0 -336.7 284.3" fill="none" stroke="#ea580c" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(319.82) translate(-440.7,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Malformed vessel JSON</text>
+<path d="M -207.8 112.2 C -311.3 168.1 -309.5 220.4 -405.3 288.6" fill="none" stroke="#ea580c" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(324.55) translate(-497.5,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Missing shipment in manifest</text>
+<path d="M -207.8 112.2 C -304.9 164.6 -318.9 189.6 -413.7 245.9" fill="none" stroke="#ea580c" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(329.27) translate(-481.3,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Invalid date in port_calls</text>
+<path d="M -207.8 112.2 C -298.4 161.1 -325.4 158.7 -418.0 203.9" fill="none" stroke="#ea580c" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(334.00) translate(-465.0,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Malformed weather number</text>
+<path d="M -207.8 112.2 C -288.8 155.9 -324.9 126.5 -410.7 159.9" fill="none" stroke="#ea580c" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(338.73) translate(-440.7,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Call with no forecast</text>
+<path d="M -207.8 112.2 C -337.0 182.0 -398.4 118.4 -539.2 160.2" fill="none" stroke="#ea580c" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(343.45) translate(-562.5,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#ea580c" font-family="Segoe UI, Helvetica, Arial, sans-serif">Incidents with/without sensitive ids</text>
+<path d="M 0.0 0.0 C -111.0 -4.6 -135.6 -5.6 -246.6 -10.2" fill="none" stroke="#0d9488" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(362.36) translate(-246.8,0)" text-anchor="end" font-size="19" font-weight="700" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">Tasks 4-5  reporting</text>
+<path d="M -246.6 -10.2 C -382.4 -15.8 -404.1 84.6 -537.1 112.4" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(348.18) translate(-548.8,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T4: exports/customer-profiles.csv</text>
+<path d="M -246.6 -10.2 C -411.6 -17.0 -445.2 55.4 -609.0 75.8" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(352.91) translate(-613.7,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T4: header once, append new / rewrite row</text>
+<path d="M -246.6 -10.2 C -400.6 -16.5 -434.8 17.9 -588.9 24.3" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(357.64) translate(-589.4,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T4: destinations sorted, joined with |</text>
+<path d="M -246.6 -10.2 C -356.8 -14.7 -381.3 -15.7 -491.5 -20.3" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(362.36) translate(-491.9,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T4: weight with 2 decimals</text>
+<path d="M -246.6 -10.2 C -400.6 -16.5 -431.9 -53.7 -584.9 -72.8" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(367.09) translate(-589.4,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T5: month 1-12 validation, exact error</text>
+<path d="M -246.6 -10.2 C -386.0 -15.9 -408.5 -85.5 -545.1 -114.1" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(371.82) translate(-556.9,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T5: skip bad date + unknown vessel</text>
+<path d="M -246.6 -10.2 C -386.0 -15.9 -400.1 -118.8 -533.8 -158.6" fill="none" stroke="#0d9488" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(376.55) translate(-556.9,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#0d9488" font-family="Segoe UI, Helvetica, Arial, sans-serif">T5: sort by date, then vessel name</text>
+<path d="M 0.0 0.0 C -72.6 -56.4 -88.7 -68.9 -161.3 -125.2" fill="none" stroke="#4f46e5" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(397.82) translate(-204.2,0)" text-anchor="end" font-size="19" font-weight="700" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">Tasks 8-9  joins</text>
+<path d="M -161.3 -125.2 C -248.5 -192.9 -316.0 -123.0 -418.7 -163.0" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(381.27) translate(-449.4,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T8: match port_code + date</text>
+<path d="M -161.3 -125.2 C -277.3 -215.3 -344.9 -168.2 -476.9 -232.6" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(386.00) translate(-530.6,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T8: chronological, call_id tie-break</text>
+<path d="M -161.3 -125.2 C -294.7 -228.7 -352.9 -209.8 -498.0 -296.0" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(390.73) translate(-579.3,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T8: wind&gt;=45, wave&gt;=2.5, rain&gt;=8 &amp; wind&lt;45</text>
+<path d="M -161.3 -125.2 C -260.0 -201.8 -290.7 -207.0 -392.5 -279.5" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(395.45) translate(-481.8,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T8: else Normal operating plan</text>
+<path d="M -161.3 -125.2 C -294.7 -228.7 -313.6 -264.9 -442.6 -373.8" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(400.18) translate(-579.3,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T9: lowercased words, punctuation stripped</text>
+<path d="M -161.3 -125.2 C -291.8 -226.5 -287.6 -286.7 -404.5 -403.2" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(404.91) translate(-571.2,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T9: inverted index + titles -&gt; JSON cache</text>
+<path d="M -161.3 -125.2 C -291.8 -226.5 -263.0 -309.4 -369.9 -435.2" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(409.64) translate(-571.2,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T9: reuse cache, rebuild if stale/corrupt</text>
+<path d="M -161.3 -125.2 C -277.3 -215.3 -223.6 -311.9 -309.1 -431.2" fill="none" stroke="#4f46e5" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(414.36) translate(-530.6,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#4f46e5" font-family="Segoe UI, Helvetica, Arial, sans-serif">T9: score desc, then incident id asc</text>
+<path d="M 0.0 0.0 C -24.7 -62.8 -30.2 -76.8 -54.9 -139.6" fill="none" stroke="#16a34a" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(428.55) translate(-150.0,0)" text-anchor="end" font-size="19" font-weight="700" fill="#16a34a" font-family="Segoe UI, Helvetica, Arial, sans-serif">Submission</text>
+<path d="M -54.9 -139.6 C -112.6 -286.5 -176.1 -294.2 -257.2 -429.6" fill="none" stroke="#16a34a" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(419.09) translate(-500.7,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#16a34a" font-family="Segoe UI, Helvetica, Arial, sans-serif">CodeGrade group of exactly 3-4 students</text>
+<path d="M -54.9 -139.6 C -101.9 -259.3 -135.5 -275.6 -192.2 -391.0" fill="none" stroke="#16a34a" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(423.82) translate(-435.7,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#16a34a" font-family="Segoe UI, Helvetica, Arial, sans-serif">main.py + every imported module</text>
+<path d="M -54.9 -139.6 C -113.9 -289.9 -127.0 -323.3 -186.1 -473.5" fill="none" stroke="#16a34a" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(428.55) translate(-508.8,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#16a34a" font-family="Segoe UI, Helvetica, Arial, sans-serif">readme.txt - members, work, architecture</text>
+<path d="M -54.9 -139.6 C -116.6 -296.7 -102.5 -341.2 -151.1 -502.8" fill="none" stroke="#16a34a" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(433.27) translate(-525.0,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#16a34a" font-family="Segoe UI, Helvetica, Arial, sans-serif">test-ledger.csv - normal/boundary/bad data</text>
+<path d="M -54.9 -139.6 C -101.9 -259.3 -63.9 -300.4 -90.6 -426.2" fill="none" stroke="#16a34a" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(438.00) translate(-435.7,0)" text-anchor="end" font-size="14.5" font-weight="600" fill="#16a34a" font-family="Segoe UI, Helvetica, Arial, sans-serif">Never submit a modified dataset</text>
+<path d="M 0.0 0.0 C 44.7 -112.0 54.6 -136.9 99.3 -249.0" fill="none" stroke="#db2777" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-68.25) translate(268.1,0)" text-anchor="start" font-size="19" font-weight="700" fill="#db2777" font-family="Segoe UI, Helvetica, Arial, sans-serif">Task 0 - Console shell</text>
+<path d="M 99.3 -249.0 C 138.9 -348.1 82.8 -389.7 105.0 -494.0" fill="none" stroke="#db2777" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-78.00) translate(505.1,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#db2777" font-family="Segoe UI, Helvetica, Arial, sans-serif">Exact menu text and order</text>
+<path d="M 99.3 -249.0 C 155.1 -388.8 131.2 -432.6 174.9 -576.6" fill="none" stroke="#db2777" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-73.12) translate(602.5,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#db2777" font-family="Segoe UI, Helvetica, Arial, sans-serif">Loop-state close: no exit(), no break</text>
+<path d="M 99.3 -249.0 C 156.5 -392.2 169.2 -424.0 226.3 -567.2" fill="none" stroke="#db2777" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-68.25) translate(610.6,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#db2777" font-family="Segoe UI, Helvetica, Arial, sans-serif">Error - Select a service from 1 to 10.</text>
+<path d="M 99.3 -249.0 C 149.7 -375.2 194.6 -388.1 255.5 -509.6" fill="none" stroke="#db2777" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-63.38) translate(570.0,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#db2777" font-family="Segoe UI, Helvetica, Arial, sans-serif">Dispatch 1-9 to separate services</text>
+<path d="M 99.3 -249.0 C 153.8 -385.4 233.8 -381.6 310.6 -506.8" fill="none" stroke="#db2777" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-58.50) translate(594.4,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#db2777" font-family="Segoe UI, Helvetica, Arial, sans-serif">Closing message printed exactly once</text>
+<path d="M 0.0 0.0 C 50.6 -44.7 61.8 -54.6 112.5 -99.3" fill="none" stroke="#65a30d" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-41.44) translate(150.0,0)" text-anchor="start" font-size="19" font-weight="700" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">Dataset</text>
+<path d="M 112.5 -99.3 C 219.8 -194.0 192.8 -261.7 277.7 -377.0" fill="none" stroke="#65a30d" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-53.62) translate(468.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">vessels/*.json - id, name, imo, TEU</text>
+<path d="M 112.5 -99.3 C 206.1 -181.9 199.6 -227.6 281.9 -321.5" fill="none" stroke="#65a30d" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-48.75) translate(427.6,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">port_calls.csv - arrival dates</text>
+<path d="M 112.5 -99.3 C 219.8 -194.0 234.3 -225.3 337.5 -324.5" fill="none" stroke="#65a30d" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-43.88) translate(468.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">manifests - call_id -&gt; shipment ids</text>
+<path d="M 112.5 -99.3 C 219.8 -194.0 252.6 -204.5 363.9 -294.6" fill="none" stroke="#65a30d" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-39.00) translate(468.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">shipments/*.json - cargo + customer</text>
+<path d="M 112.5 -99.3 C 208.8 -184.4 254.3 -172.3 360.7 -244.4" fill="none" stroke="#65a30d" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-34.12) translate(435.7,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">weather.csv - wind, rain, waves</text>
+<path d="M 112.5 -99.3 C 222.5 -196.5 287.5 -161.0 415.6 -232.7" fill="none" stroke="#65a30d" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-29.25) translate(476.3,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#65a30d" font-family="Segoe UI, Helvetica, Arial, sans-serif">incidents/*.json - id, title, report</text>
+<path d="M 0.0 0.0 C 101.1 -8.6 123.6 -10.5 224.7 -19.2" fill="none" stroke="#7c3aed" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-4.88) translate(225.5,0)" text-anchor="start" font-size="19" font-weight="700" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">Tasks 1-3  linking</text>
+<path d="M 224.7 -19.2 C 462.0 -39.4 470.6 -213.2 687.6 -311.5" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-24.38) translate(754.8,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T1 vessels: scan folder, 4 fields, skip + count, sort by name</text>
+<path d="M 224.7 -19.2 C 451.1 -38.5 474.4 -168.0 688.6 -243.8" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-19.50) translate(730.5,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T2 manifest: earliest call &gt;= date, tie = smallest call_id</text>
+<path d="M 224.7 -19.2 C 385.6 -32.9 409.2 -106.8 565.4 -147.5" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-14.62) translate(584.3,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T2: join by business id, never filenames</text>
+<path d="M 224.7 -19.2 C 360.1 -30.7 385.9 -66.3 519.9 -89.3" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-9.75) translate(527.5,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T2: MISSING RECORD / NOT PROVIDED</text>
+<path d="M 224.7 -19.2 C 341.9 -29.2 367.9 -31.4 485.1 -41.4" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(-4.88) translate(486.9,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T3: first matching rule only</text>
+<path d="M 224.7 -19.2 C 338.2 -28.8 364.8 0.0 478.8 0.0" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(0.00) translate(478.8,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T3: hazardous -&gt; CONTROLLED</text>
+<path d="M 224.7 -19.2 C 320.0 -27.3 341.2 29.1 436.6 37.2" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(4.88) translate(438.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T3: temp -&gt; COLD CHAIN</text>
+<path d="M 224.7 -19.2 C 367.4 -31.3 394.7 67.8 535.9 92.1" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(9.75) translate(543.7,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T3: EXPRESS or &gt;=5000kg -&gt; EXPEDITE</text>
+<path d="M 224.7 -19.2 C 385.6 -32.9 409.2 106.8 565.4 147.5" fill="none" stroke="#7c3aed" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(14.62) translate(584.3,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#7c3aed" font-family="Segoe UI, Helvetica, Arial, sans-serif">T3: else STANDARD, totals in fixed order</text>
+<path d="M 0.0 0.0 C 70.0 51.9 85.5 63.4 155.5 115.3" fill="none" stroke="#dc2626" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(36.56) translate(193.6,0)" text-anchor="start" font-size="19" font-weight="700" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">Tasks 6-7  text</text>
+<path d="M 155.5 115.3 C 267.6 198.4 343.3 121.6 474.8 168.1" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(19.50) translate(503.7,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T6: titles sorted, numbered from 1</text>
+<path d="M 155.5 115.3 C 282.3 209.3 352.0 159.5 495.8 224.6" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(24.38) translate(544.3,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T6: 4 letters + 7 digits -&gt; [CONTAINER]</text>
+<path d="M 155.5 115.3 C 255.8 189.7 302.1 169.2 411.1 230.2" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(29.25) translate(471.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T6: SEAL- + 6 digits -&gt; [SEAL]</text>
+<path d="M 155.5 115.3 C 226.5 168.0 249.7 169.2 322.8 218.8" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(34.12) translate(390.0,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T6: email -&gt; [EMAIL]</text>
+<path d="M 155.5 115.3 C 282.3 209.3 300.3 243.2 423.0 342.5" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(39.00) translate(544.3,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T6: no match -&gt; no file + exact message</text>
+<path d="M 155.5 115.3 C 267.6 198.4 262.5 252.4 363.1 349.1" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(43.88) translate(503.7,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T7: sliding window written by hand</text>
+<path d="M 155.5 115.3 C 285.2 211.5 257.8 293.9 364.2 415.3" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(48.75) translate(552.4,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T7: start jumps past previous occurrence</text>
+<path d="M 155.5 115.3 C 255.8 189.7 205.4 278.8 279.5 379.4" fill="none" stroke="#dc2626" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(53.62) translate(471.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#dc2626" font-family="Segoe UI, Helvetica, Arial, sans-serif">T7: keep first on equal length</text>
+<path d="M 0.0 0.0 C 25.2 63.1 30.8 77.2 56.0 140.3" fill="none" stroke="#ca8a04" stroke-width="2.7" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(68.25) translate(151.0,0)" text-anchor="start" font-size="19" font-weight="700" fill="#ca8a04" font-family="Segoe UI, Helvetica, Arial, sans-serif">Constraints</text>
+<path d="M 56.0 140.3 C 106.3 266.5 165.7 270.4 236.7 386.2" fill="none" stroke="#ca8a04" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(58.50) translate(453.0,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#ca8a04" font-family="Segoe UI, Helvetica, Arial, sans-serif">Standard library only - no pandas</text>
+<path d="M 56.0 140.3 C 99.6 249.5 132.1 263.5 184.8 368.7" fill="none" stroke="#ca8a04" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(63.38) translate(412.4,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#ca8a04" font-family="Segoe UI, Helvetica, Arial, sans-serif">No hard-coded sample records</text>
+<path d="M 56.0 140.3 C 117.2 293.6 130.7 327.7 191.9 481.1" fill="none" stroke="#ca8a04" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(68.25) translate(518.0,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#ca8a04" font-family="Segoe UI, Helvetica, Arial, sans-serif">Catch only named exceptions at boundaries</text>
+<path d="M 56.0 140.3 C 110.4 276.7 95.9 316.3 138.6 456.8" fill="none" stroke="#ca8a04" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(73.12) translate(477.4,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#ca8a04" font-family="Segoe UI, Helvetica, Arial, sans-serif">Exact prompts and formats = contract</text>
+<path d="M 56.0 140.3 C 109.0 273.3 67.8 318.9 97.6 459.0" fill="none" stroke="#ca8a04" stroke-width="2.0" stroke-opacity="0.75" stroke-linecap="round"/>
+<text transform="rotate(78.00) translate(469.2,0)" text-anchor="start" font-size="14.5" font-weight="600" fill="#ca8a04" font-family="Segoe UI, Helvetica, Arial, sans-serif">Assignment 1 tool bans do not apply</text>
+<rect x="-215.0" y="-48.0" width="430" height="96" rx="18" fill="#0f172a" stroke="#0f172a"/>
+<text x="0" y="-14" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff" font-family="Segoe UI, Helvetica, Arial, sans-serif">ASSIGNMENT 2</text>
+<text x="0" y="16" text-anchor="middle" font-size="15" fill="#93c5fd" font-family="Segoe UI, Helvetica, Arial, sans-serif">HarborFlow Port Intelligence Console</text>
+</g></svg>

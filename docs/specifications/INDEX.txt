@@ -1,0 +1,58 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+ASSIGNMENT 2 BLUEPRINT INDEX
+
+Purpose
+These guides break the Assignment 2 PDF into one shared requirements file and
+one practical brief for each of Tasks 0-9. The PDF is authoritative. Exact
+client-facing text, filenames and formats must be checked against it.
+
+Shared requirements
+00-ALLOWED-TOOLS-AND-LIMITATIONS.txt
+Allowed scope, restrictions, data boundaries and submission limitations.
+00-ASSIGNMENT-2-SHARED-REQUIREMENTS.txt
+Project-wide scope, paths, error handling, console contract, delivery and
+minimum acceptance evidence.
+
+Task guides
+01-PRODUCT-SHELL-DETAILS.txt
+  PDF Task 0: persistent menu, input validation and safe close.
+02-REGISTER-VESSELS-DETAILS.txt
+  PDF Task 1: load, validate, sort and report vessel records.
+03-INSPECT-VESSEL-MANIFEST-DETAILS.txt
+  PDF Task 2: connect vessel, call, manifest and shipment records.
+04-IDENTIFY-PRIORITY-CARGO-DETAILS.txt
+  PDF Task 3: classify resolved shipments using ordered business rules.
+05-CUSTOMER-PROFILE-EXPORT-DETAILS.txt
+  PDF Task 4: aggregate shipments and create/update a customer CSV profile.
+06-PORT-CALLS-BY-MONTH-DETAILS.txt
+  PDF Task 5: validate a month and report matched port calls.
+07-SANITIZE-INCIDENT-REPORT-DETAILS.txt
+  PDF Task 6: redact sensitive values from a selected incident report.
+08-STABLE-EVENT-SEQUENCE-DETAILS.txt
+  PDF Task 7: find the longest contiguous sequence without repeated events.
+09-WEATHER-RISK-DETAILS.txt
+  PDF Task 8: join upcoming calls with forecasts and report recommendations.
+10-SEARCH-INCIDENT-REPORTS-DETAILS.txt
+  PDF Task 9: build/reuse an inverted index and rank incident matches.
+
+Recommended integration order
+1. Agree on record fields and shared function interfaces; implement and test
+   data loaders because most services depend on reliable records.
+2. Build the Task 0 shell and Task 1 vessel loader, then integrate services
+   incrementally through the menu.
+3. Task 2 and Task 3 share call, manifest and shipment relationships.
+4. Task 4 and Task 5 both use shipment or port-call data; they can be developed
+   separately once the relevant loaders are stable.
+5. Task 6 and Task 7 use incident reports and manifest event codes respectively.
+6. Task 8 joins port calls and weather. Task 9 builds and reuses an incident
+   index; ensure its cache rules are tested across repeated runs.
+
+Dependency summary
+- Task 0 is the shared entry point for all services.
+- Tasks 2 and 3 use vessel/call/manifest/shipment relationships.
+- Task 4 aggregates shipment records; Task 5 resolves port calls to vessels.
+- Task 6 and Task 9 use incident records, with Task 9 also persisting a cache.
+- Task 7 uses manifest event_codes; Task 8 joins calls with weather.
+- Tasks 1-9 should return control to the Task 0 menu after completion.
+
+See 00-ASSIGNMENT-2-SHARED-REQUIREMENTS.txt for project-wide constraints.

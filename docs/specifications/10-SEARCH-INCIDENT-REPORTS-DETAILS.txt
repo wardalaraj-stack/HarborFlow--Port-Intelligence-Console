@@ -1,0 +1,57 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 9: SEARCH INCIDENT REPORTS
+
+Business outcome
+Build a reusable evidence index so operations can retrieve prior incidents by
+keywords.
+
+Goal
+Normalize incident report text, build an inverted index and title lookup, cache
+them in JSON, and rank user searches from the loaded cache.
+
+Index construction
+- Normalize report text to lowercase words and remove punctuation with regex.
+- Build an index whose keys are normalized words and whose values are lists of
+  incident IDs containing each word.
+- Build a titles lookup whose keys are incident IDs and values are incident
+  titles.
+- Do not add the same incident ID twice to one word's list when the word
+  repeats in that report.
+- Save valid JSON at dataset/incident-index.json with exactly these top-level
+  keys: index and titles.
+- Sort word keys, title keys and every incident ID list before writing.
+
+Cache reuse and rebuild
+- Load and reuse the cache on later runs when it is valid and not older than
+  any source incident file.
+- Rebuild the cache if it is missing, malformed or older than any source
+  incident file.
+- Searching must use the loaded index and titles lookup; do not reread source
+  incident reports during search.
+
+Search and ranking
+1. Ask for a query and normalize it using the same rules as report text.
+2. Score each incident by the number of distinct query words whose index list
+   contains that incident ID. A repeated query word counts once.
+3. Print only incidents with a positive score.
+4. Sort results by descending score, then incident ID in ascending order.
+5. Use the cached titles lookup for displayed titles.
+
+Example
+Search incident reports: reefer delay
+Matches for 'reefer delay':
+- INC-119 | score 2 | Reefer transfer delayed
+- INC-087 | score 1 | Gate congestion delay
+- INC-102 | score 1 | Reefer temperature deviation
+
+Acceptance checks
+[ ] Text and queries use identical lowercase/word/punctuation normalization.
+[ ] Repeated report words do not duplicate an incident ID in one index list.
+[ ] JSON has top-level keys index and titles; all required keys/lists are
+    sorted before writing.
+[ ] Missing, malformed and stale caches rebuild from source incident files.
+[ ] A current valid cache is reused.
+[ ] Repeated query terms count once; non-matching incidents are omitted.
+[ ] Results sort by descending score and then ascending incident ID.
+[ ] Search displays titles from the cache and does not reopen incident reports.
+[ ] Test one-word, repeated-word, no-match and corrupt-cache searches.

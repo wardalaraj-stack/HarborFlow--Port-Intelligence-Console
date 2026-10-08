@@ -1,0 +1,157 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 0: PRODUCT SHELL - LEARNING AND CODING GUIDE
+
+Purpose of this guide
+This guide teaches you how to plan and write the Task 0 menu yourself. It is
+not a finished solution: it contains no runnable implementation code. Use it
+beside BluePrints_2/01-PRODUCT-SHELL-DETAILS.txt and the Assignment 2 PDF.
+
+What you are learning
+- How a loop keeps a console running across multiple services.
+- How a Boolean state controls when that loop ends.
+- How to validate text input before using it as a menu choice.
+- How a menu dispatches to separate functions without holding their business
+  logic itself.
+- How to keep a program's start point explicit and predictable.
+
+Terms, functions and control flow you need
+These are the Python ideas used by Task 0. Learn what each one contributes
+before combining them into the menu.
+
+- Function: a named, reusable unit of work. Defining a function describes its
+  job; calling it runs that job. main() coordinates the console. Each service
+  should also have its own function so the menu can call it.
+- Function call: the point where execution enters a function. When that
+  function finishes, execution resumes after the call. That is how a completed
+  service can return control to the menu loop.
+- print(): a built-in function that displays text. Menu labels and required
+  messages must be printed with their exact spelling and punctuation.
+- input(): a built-in function that displays a prompt and waits for text. Its
+  result is a string, even when the user typed digits.
+- int(): a built-in conversion function that turns valid whole-number text into
+  an integer. Text that is not a valid integer causes a ValueError.
+- Boolean: a value that is either True or False. Use one Boolean state variable
+  to record whether the console should continue running.
+- while loop: repeats its indented work while its condition is True. The menu
+  belongs in this loop so it can appear again after a service returns.
+- if / elif / else: conditional branches. Use them to distinguish invalid
+  values, service choices 1-9, and the close choice 10.
+- try / except: exception handling around an operation that may fail for an
+  expected reason. For menu conversion, catch ValueError specifically, print
+  the required error, and let the loop ask again. Do not catch every error.
+- ValueError: the specific exception int() raises when input cannot be
+  converted to a whole number, such as abc or 2.5.
+- __name__ == "__main__": a standard module check. It is True when the file is
+  run directly. Put the call to main() behind this check so importing the file
+  does not unexpectedly start the console.
+- break and exit(): ways to interrupt or terminate execution. The assignment
+  says not to use them to close the console; change the loop-state variable
+  for option 10 instead.
+
+Start with the user's journey
+Before writing Python, trace one normal visit:
+1. The program starts and displays the menu.
+2. The dispatcher types a choice.
+3. The program validates that choice.
+4. A valid service choice calls that service function.
+5. When the service returns, the menu appears again.
+6. Choice 10 ends the loop and displays the closing message once.
+
+The key idea is that the menu is a traffic controller. It should decide which
+function to call, not perform vessel, shipment, weather or incident work itself.
+Those features belong to Tasks 1-9.
+
+Build the shell in learning-sized steps
+
+Step 1: Write down the exact interface
+Copy the required menu from the Task 0 blueprint before coding. Check every
+number, capital letter, punctuation mark, space and option label against the
+PDF. Exact console output is part of the assignment, so do not paraphrase it.
+
+Step 2: Decide what state the loop needs
+Ask yourself: "What fact tells the program whether the console should keep
+running?" Represent that fact with a Boolean variable. It starts in the active
+state. Only the close-menu path should change it to the inactive state.
+
+Learning note: A state variable makes the ending condition visible. It is easier
+to reason about than abruptly terminating the program from inside a service.
+
+Step 3: Put the menu inside the persistent loop
+The menu must be displayed again after a service finishes. Place the menu
+printing and input collection inside the loop. Keep the displayed menu text in
+one clearly readable block so you can compare it with the PDF.
+
+Step 4: Validate before dispatching
+The input function returns text. Convert that text to an integer inside a
+focused ValueError handler. A conversion failure should print exactly:
+Error - Select a service from 1 to 10.
+
+After conversion, check that the number is from 1 through 10. An integer such
+as 0 or 11 is still invalid, so conversion alone is not enough. Print the same
+required error for out-of-range values. Invalid input must not call a service.
+
+Learning note: Catch only the expected conversion error here. A broad exception
+handler could hide a programming mistake and make debugging harder.
+
+Step 5: Separate dispatch from feature work
+Match the validated number to the correct service function using the menu's
+number-to-service mapping. Each option from 1 to 9 should lead to its own
+function. Keep each branch short: it should choose a function and call it.
+Do not put data loading or task-specific calculations in the menu branch.
+
+When a later task adds a service, connect its function to the matching menu
+option. This keeps the same shell usable as the product grows.
+
+Step 6: Make option 10 the only normal close path
+When the validated choice is 10, change the loop state so the loop can finish.
+Do not use exit() or break to close the console, and do not close it from a
+service function. Print this exact closing message exactly once:
+Console closed. HarborFlow operational data remains safe.
+
+A useful design question: Where can that line be printed so options 1-9 never
+print it and option 10 cannot print it twice? Decide this before adding the
+closing output.
+
+Step 7: Make the file start predictably
+Put the program entry call behind the standard __main__ guard, and have that
+entry call main(). This lets the file run as a program without starting the
+console merely because another module imports it.
+
+Step 8: Test the menu before building more services
+Test one input at a time and observe the whole path, not just the printed line.
+For example, after an invalid choice, verify the error appears, no service runs,
+and the program still asks for a choice. After a service call, verify control
+returns to the menu.
+
+Reasoning questions to answer as you code
+- What exact condition keeps the loop active?
+- Which inputs fail during integer conversion, and which convert but are out of
+  range?
+- How do you ensure invalid input never reaches the service branches?
+- What should a menu branch do, and what work belongs inside the service?
+- How can you prove the close message is printed only once?
+- Why is a focused ValueError handler better than catching every exception?
+
+Test checklist
+[ ] The first visible output is the exact Assignment 2 menu.
+[ ] The menu text and option order match the PDF character for character.
+[ ] Text such as abc is rejected without crashing.
+[ ] 0, 11 and a negative integer are rejected with the exact error message.
+[ ] A valid option from 1 through 9 dispatches to its service.
+[ ] After the service returns, the menu is displayed again.
+[ ] Invalid input does not invoke a service.
+[ ] Option 10 ends the loop and prints the exact closing message once.
+[ ] No other option prints the closing message.
+[ ] There is no exit() or break used to close the console.
+[ ] The main() call is protected by the __main__ guard.
+
+Self-check before moving to Task 1
+Explain the flow aloud without reading the file: start, display, input, validate,
+dispatch, return, close. If you cannot point to the state change that ends the
+loop or explain why invalid text cannot be dispatched, revisit Steps 2-5.
+
+Commenting guidance
+Comments should explain a decision that is not obvious from the code, such as
+why input conversion has a narrow error handler or why the close state changes
+only for option 10. Do not comment every line or use comments as a substitute
+for clear function names.

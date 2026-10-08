@@ -1,0 +1,55 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 4: EXPORT A CUSTOMER OPERATIONS PROFILE
+
+Business outcome
+Give account managers one persistent CSV record they can open outside the
+console.
+
+Goal
+Aggregate all valid shipment files for one customer and create or update that
+customer's row in exports/customer-profiles.csv.
+
+Input and matching
+- Ask for a customer name, strip surrounding spaces, and match customer names
+  case-insensitively across all valid shipment records.
+- If no shipment matches, print exactly: Customer not found.
+- When there is no match, do not create or modify the export file.
+
+Profile fields
+Create the exact CSV header, in this order:
+customer,shipment_count,total_weight_kg,express_count,destinations
+
+For the customer's data:
+- Count matching shipments and total their weight_kg values.
+- Count shipments whose priority is EXPRESS for express_count.
+- Collect unique destination codes, sort them, and join them with |.
+- Format total_weight_kg with exactly two decimal places.
+
+Persistent update behavior
+- Use the exact path exports/customer-profiles.csv.
+- Write the header exactly once, including on the first write.
+- If the customer is new, append one row.
+- If the customer already has a row, replace that row without changing other
+  customers or creating a duplicate. Match existing customer names without
+  regard to case.
+- Use a temporary in-memory list and rewrite safely when updating an existing
+  row. Preserve a valid CSV that can be loaded on a later run.
+
+Example
+customer,shipment_count,total_weight_kg,express_count,destinations
+Norra MedTech AB,8,6420.50,3,CPH|GOT|OSL
+
+Customer name: Norra MedTech AB
+Customer profile updated: exports/customer-profiles.csv
+
+Acceptance checks
+[ ] Matching trims the input and ignores customer-name case.
+[ ] All valid matching shipment records contribute to counts and weight.
+[ ] Destinations are unique, sorted and separated by |.
+[ ] Weight has exactly two decimal places.
+[ ] First write creates one header and one row.
+[ ] A second customer gets a separate row.
+[ ] Updating a customer replaces that row without duplicating or altering
+    unrelated customer rows.
+[ ] An unknown customer prints the exact message and leaves the file untouched.
+[ ] Reload the generated CSV successfully after writing and updating.

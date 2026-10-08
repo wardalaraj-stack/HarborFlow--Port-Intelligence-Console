@@ -1,0 +1,155 @@
+TASK 0 PLAN — HarborFlow Port Intelligence Console: Product Shell
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-27
+
+================================================================
+1. GOVERNANCE GATE
+================================================================
+
+Queen pass (role/scope/requirements check):
+This plan concerns Task 0 only — the console shell in main.py. It does not
+redesign, extend, or modify main.py in any way; main.py was read strictly
+read-only for inspection. It imports no "Assignment 1" content and makes no
+reference to any other assignment. It does not touch protected files: the
+dataset files, test-ledger.csv, readme.txt, START-HERE.txt, or the original
+assignment PDF/ZIP were either not opened at all or (in the case of
+test-ledger.csv) opened strictly read-only for evidence review, with zero
+writes. The only file this plan writes is the new file
+C:\Users\conda\Desktop\Assignment 2\TASK-0-PLAN.txt. Verdict: PASS.
+
+Critic pass (risk/design check):
+main.py was read in full and compared line by line against the Task 0 spec.
+The menu block (lines 8-18) prints the ten options in the exact required
+text and order, followed by the exact "Select service: " prompt (line 21).
+The loop uses a boolean loop-state variable named `running` (set True at
+line 6, flipped to False only on selection 10 at line 29, checked as the
+`while running:` condition at line 7) — no `exit()` and no `break` appear
+anywhere in the file. The exact error string
+"Error - Select a service from 1 to 10." is printed verbatim in two places:
+on ValueError from the int() conversion (line 23) and on out-of-range
+integer input (line 27) — both paths return control to the top of the loop
+(via `continue` or by falling through to the next iteration) without
+crashing. Exception handling is scoped to a single `try/except ValueError`
+around `int(input(...))` (lines 20-24); there is no blanket `except:` clause
+anywhere in the file. The shell performs no file, JSON, or CSV operations,
+so FileNotFoundError/json.JSONDecodeError/csv.Error are correctly absent
+here (the spec requires catching those only where the product can give a
+useful response, i.e. in the per-task services that will be built in later
+phases, not in the shell itself). Selections 1-9 print a placeholder
+"Service not implemented." and return to the menu, consistent with Task 0
+being shell-only. Selection 10 sets `running = False`, and after the loop
+exits, the exact closing line
+"Console closed. HarborFlow operational data remains safe." is printed
+(line 33). Verdict: main.py matches the Task 0 spec item by item. PASS.
+
+Validator pass (acceptance-criteria check):
+This plan file explicitly records the mandatory, non-upgradeable acceptance
+status text below, verbatim, and does not describe Task 0 as "validated" or
+"passed" under this framework's own procedure. Existing evidence in
+test-ledger.csv (the "Shell" row: "Menu input validation and persistent
+loop") already records a prior PASS from a separate, earlier validation
+pass (scripted inputs covering invalid text, lower/upper out-of-range
+bounds, a valid selection returning to the menu, and both scripted and
+direct closure via option 10) — this is acknowledged as pre-existing
+evidence only, not as this framework's own acceptance sign-off. Verdict:
+PASS, conditioned on including the mandatory status line unchanged (see
+Section 4).
+
+All three passes succeeded. Proceeding to document the plan below.
+
+================================================================
+2. TASK 0 REQUIREMENT SUMMARY (verbatim from assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Give port staff one stable entry point and protect the
+shift from file and input failures.
+
+Exact menu (printed every loop iteration), then `Select service: ` prompt:
+
+HARBORFLOW PORT INTELLIGENCE
+1. List registered vessels
+2. Inspect a vessel manifest
+3. Identify priority cargo
+4. Export a customer operations profile
+5. Find port calls by month
+6. Sanitize an incident report
+7. Analyze the longest stable event sequence
+8. Assess weather risk for upcoming calls
+9. Search incident reports
+10. Close console
+Select service:
+
+- Use a loop-state variable; do not use exit() and do not stop with break.
+- Reject non-integer and out-of-range menu input with exactly:
+  Error - Select a service from 1 to 10.
+- Catch FileNotFoundError, json.JSONDecodeError, csv.Error and ValueError
+  only where the product can give a useful response. After a recoverable
+  error, return safely to the menu. Do not use a blanket except clause.
+- Closing line on option 10:
+  Console closed. HarborFlow operational data remains safe.
+- Console starts from main.py, returns to menu after each service, closes
+  only via option 10.
+
+================================================================
+3. IMPLEMENTATION STATUS (already exists — pre-existing, working code)
+================================================================
+
+File: C:\Users\conda\Desktop\Assignment 2\main.py (37 lines; sole entry
+point, `if __name__ == "__main__": main()`).
+
+Item-by-item confirmation against spec:
+- Menu text and order: MATCHES exactly (lines 8-18).
+- Prompt text "Select service: ": MATCHES exactly (line 21).
+- Loop-state variable, no exit()/break: MATCHES (`running` boolean, lines
+  6-7 and 29; no exit() or break present anywhere in the file).
+- Error string for non-integer input: MATCHES exactly (line 23, reached via
+  ValueError from `int(input(...))`).
+- Error string for out-of-range input: MATCHES exactly (line 27, reached
+  via the `selection < 1 or selection > 10` check).
+- Return to menu after a recoverable error: MATCHES (`continue` after the
+  ValueError branch; normal loop fallthrough after the range-check branch).
+- Exception scope, no blanket except: MATCHES (single
+  `try: ... except ValueError:` around the int() conversion only; no other
+  except clauses in the file; no file/JSON/CSV operations exist in the
+  shell, so FileNotFoundError/json.JSONDecodeError/csv.Error are correctly
+  not caught here — those apply to per-task services in later phases).
+- Closing line: MATCHES exactly (line 33).
+- Starts from main.py, closes only via option 10: MATCHES.
+- Selections 1-9: print "Service not implemented." placeholder and return
+  to the menu, as expected for a shell-only task with Tasks 1-9 not yet
+  built.
+
+Pre-existing test evidence: test-ledger.csv contains one row (area="Shell",
+test_case="Menu input validation and persistent loop") already marked
+status="Passed", with actual_result describing verification of invalid
+text input, lower/upper out-of-range bounds, a valid selection (1) returning
+to the menu, and closure via option 10 (both after a prior invalid-input
+sequence and via direct input), with exact prompt/menu/error/closure text
+confirmed. This file was opened read-only for this inspection and was not
+modified.
+
+Reference documents reviewed (read-only, for background only):
+- C:\Users\conda\Desktop\Assignment 2\docs\superpowers\plans\2026-09-27-task-0-shell.md
+- C:\Users\conda\Desktop\Assignment 2\docs\superpowers\specs\2026-09-27-task-0-shell-design.md
+Both describe the same shell design and confirm the implementation in
+main.py was built to this design.
+
+================================================================
+4. ACCEPTANCE STATUS (mandatory, verbatim, non-negotiable)
+================================================================
+
+Accepted as-is by explicit user decision on 2026-09-27. Not independently
+re-validated under this framework's acceptance procedure.
+
+================================================================
+5. FORWARD-LOOKING NOTE
+================================================================
+
+No further implementation work is planned for Task 0; it is already done
+and is not to be modified as part of this or any other task's work in this
+framework. For Phase 4 implementation ordering purposes only, Task 0 may be
+treated as satisfied so that Tasks 1-9 (which depend on the console shell
+existing) can proceed without being blocked. This dependency-satisfaction
+treatment is a scheduling convenience only — it is NOT a claim that Task 0
+has been validated or passed under this framework's own acceptance
+procedure; see Section 4 for the governing status.

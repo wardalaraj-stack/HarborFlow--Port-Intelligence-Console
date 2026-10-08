@@ -1,0 +1,515 @@
+TASK 4 PLAN — HarborFlow Port Intelligence Console: Export a Customer
+Operations Profile
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-27
+
+================================================================
+1. SCOPE AND PLANNING EVIDENCE
+================================================================
+
+Scope and evidence (no approval claimed):
+This plan covers Task 4 only — "Export a customer operations profile" (menu
+option 4, confirmed verbatim in main.py's existing printed menu line "4.
+Export a customer operations profile"). It proposes no application code
+changes; main.py, operations.py, data_access.py, and text_tools.py were
+opened strictly read-only for inspection of existing structure (all four
+remain stubs/placeholders for this task's logic at planning time). It
+imports no "Assignment 1" content and makes no reference to any other
+assignment or unrelated codebase. It does not propose touching any protected
+file: dataset/shipments/*.json, dataset/DATA-DICTIONARY.md, test-ledger.csv,
+readme.txt, and START-HERE.txt were all opened strictly read-only for
+evidence (Section 4 below reproduces the assignment's own worked example
+line-for-line against real shipped data). exports/customer-profiles.csv is
+explicitly NOT a protected input file — it is the one generated business
+output this task is charged with creating/updating, per exports/README.txt
+("The program creates business outputs in this directory") and per the
+assignment's own worked example naming that exact path; this plan treats it
+as in-scope output design, not a protected artifact, while still not writing
+it during planning (no code is executed by this plan). File-scope statements
+in this section describe the original Task 4 drafting pass. The coordinated
+revision edits planning documents only; it does not modify application
+code, source data, test-ledger.csv, or readme.txt. No project commands,
+tests, or builds were run as part of this plan revision.
+
+Design considerations (not a review approval):
+The design below (Section 3) treats exports/customer-profiles.csv as an
+opaque list of already-formatted string rows loaded once via
+data_access.read_customer_profiles(path) (empty list if the file does not
+yet exist), mutated in memory by replacing at most one row (by
+case-insensitive customer match) or appending exactly one new row, then
+written back in a single data_access.write_customer_profiles(path, rows)
+call that always calls csv.DictWriter.writeheader() before writerows(rows) —
+this structurally guarantees "write the header exactly once" (it is written
+exactly once per write call, and there is exactly one write call per
+menu-4 invocation that found a match) and structurally guarantees "no
+duplicate rows" (the in-memory list can contain at most one row per
+case-insensitive customer key, because the replace step overwrites the
+existing entry at its existing index rather than appending a second one).
+Other customers' previously-written rows are carried through the read step
+as opaque strings and are never recomputed or reformatted, so an update to
+one customer cannot perturb another customer's stored total_weight_kg
+formatting or destination ordering. Destinations are sorted with the
+built-in ascending string sort (sorted(set(...))) and joined with "|",
+matching the worked example "CPH|GOT|OSL" exactly (verified against real
+data in Section 4, not just the PDF's illustrative text). The customer name
+actually written to the row is sourced from the matched shipment records
+(dataset-derived canonical casing), not from the user's raw typed query
+string, so repeated exports using different casings/whitespace of the same
+logical customer converge on one stable stored spelling instead of drifting
+row-to-row — flagged explicitly in Section 5 as an inferred design choice,
+since the assignment states matching is case-insensitive but does not state
+which casing gets persisted.
+Reuse-risk flags (as required by the dependency note):
+ - Task 4 needs, for one typed customer name: (a) load every valid shipment
+   record across dataset/shipments (not a lookup by id, and not scoped to
+   one manifest) — this is the shared load_shipments(directory) ->
+   LoadResult[Shipment] loader defined in INTEGRATED-CONTRACT-PLAN.md.
+   Reuse that canonical shape rather than introducing per-ID directory
+   scans. (b) filter that full list by customer, case-insensitively and
+   whitespace-trimmed both sides. Step (b)
+   is NEW for Task 4 — no earlier task filters shipments by customer name at
+   all (Task 2 filters port_calls by vessel_id, Task 3 resolves shipments
+   only via one manifest's shipment_ids list) — so this plan proposes a new
+   operations.py function (aggregate_customer_profile, Section 3) rather
+   than assuming any earlier task already provides customer-name filtering.
+ - The CSV read-modify-write logic (read existing rows into memory,
+   replace-or-append the one matching row, rewrite the whole file with the
+   header written unconditionally) is unique to Task 4 per the dependency
+   note, and is proposed as this plan's own firm, self-contained design
+   (Section 3) — it depends on no other task's interfaces besides the
+   shipment loader in (a) above.
+ - express_count is not defined anywhere in DATA-DICTIONARY.md or the task
+   spec text; this plan infers priority == "EXPRESS" (exact uppercase string
+   match, the same literal Task 3 already uses for its own EXPEDITE rule)
+   and flags this as an assumption per the assignment prompt's own
+   instruction to note it — see Section 5 for the confirming evidence (the
+   spec's own worked example numbers reproduce exactly under this
+   assumption against the real dataset, which is strong but not certain
+   confirmation, since the PDF never states the rule in words).
+ - Weight-formatting risk: Python float summation of several shipment
+   weight_kg values can accumulate binary floating-point rounding noise
+   (e.g. an internal sum of 6420.500000000001). The design mandates
+   formatting via f"{total:.2f}" (round-half-to-even at the 2nd decimal, per
+   Python's format spec), never via str(total) or an f-string without a
+   precision spec, and never via manual string truncation — so the printed
+   value is always exactly two decimal digits regardless of binary noise in
+   the underlying float.
+These are design notes and project-policy choices, not a claim of reviewer
+approval.
+
+Acceptance criteria (planned, not run):
+test-ledger.csv line 4 is the "Export" campaign row ("Update existing
+customer" / "Export same customer twice" / "One replaced row and no
+duplicate"), currently status="Not run" — this is Task 4's own dedicated
+row (unlike Task 3, which had to borrow Task 2's "Relationships" row
+structure, Task 4 has an explicit, uncontested row naming it by area
+"Export"). Section 4 below builds this row's exact scenario (export the same
+customer twice in a row and confirm the file still holds exactly one row for
+that customer, at its original position, with no duplicate appended) as the
+centerpiece acceptance case, plus the first-write, second-customer-appended,
+not-found, and reload-validity cases the task instructions separately
+enumerate. Concretely, this plan traced dataset/shipments/*.json by hand
+(Section 4) and confirmed the assignment's own worked example — "Norra
+MedTech AB,8,6420.50,3,CPH|GOT|OSL" — is not merely illustrative text but
+reproduces EXACTLY from the eight real SHP-1042..SHP-1049 records under the
+express_count == "priority == EXPRESS" assumption, giving a verified
+real-data acceptance case rather than a hypothetical one. This plan does not
+mark Task 4 as validated or passed; it only defines what a future test run
+must check. No test is claimed as performed.
+
+No project tests, builds, or reviewer approvals are claimed by this plan
+revision.
+
+================================================================
+2. TASK 4 REQUIREMENT SUMMARY (verbatim from assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Give account managers one persistent CSV record they can
+open outside the console.
+
+Ask for a customer name, remove surrounding spaces, and match customer names
+case-insensitively across all valid shipment files. Create
+exports/customer-profiles.csv with the exact header below. If the customer
+is new, append one row. If the customer already exists, replace that row
+without changing other customer rows or creating a duplicate. If no
+shipment matches, print "Customer not found." and do not create or modify
+the export file.
+
+Exact header line (verbatim, written exactly once, including on first
+creation):
+  customer,shipment_count,total_weight_kg,express_count,destinations
+
+Exact worked-example row (verbatim from the PDF):
+  Norra MedTech AB,8,6420.50,3,CPH|GOT|OSL
+
+Formatting rules (verbatim requirements):
+- Write the header exactly once, including when the file is first created.
+- Sort unique destination codes and join them with "|".
+- Use a temporary in-memory list and rewrite safely when updating an
+  existing row.
+- Format total_weight_kg with exactly two decimals.
+
+Example interaction (verbatim):
+  Customer name: Norra MedTech AB
+  Customer profile updated: exports/customer-profiles.csv
+
+Error string, printed verbatim with no extra text, when no shipment matches
+the (trimmed, case-insensitive) customer name across the whole dataset:
+  Customer not found.
+In this case the export file must not be created if absent, and must not be
+modified if already present (no read-triggered write, no partial write, no
+header-only write).
+
+Prompt string: the example interaction block shows "Customer name: "
+verbatim (unlike Task 3, which had no confirmed prompt transcript, Task 4's
+prompt string IS a confirmed client contract, directly analogous to Task 2's
+confirmed "Vessel name: ").
+
+Success message string: the example interaction block shows "Customer
+profile updated: exports/customer-profiles.csv" verbatim as the ONLY success
+message shown — the assignment gives no separate wording for "first write"
+vs. "new customer appended" vs. "existing customer replaced"; this plan
+therefore proposes ONE unconditional success string used for all three
+outcomes (first creation, append, and replace), since the spec's own
+transcript never varies it. The literal path segment in that message is
+"exports/customer-profiles.csv" with a forward slash; see Section 3's
+Windows-path caution — this exact string must be printed regardless of the
+OS path separator used internally for the real file open() call.
+
+================================================================
+3. PROPOSED DESIGN
+================================================================
+
+Module responsibilities use the shared loading and error contract.
+Task-specific read/merge/write and aggregation behavior is defined here:
+
+data_access.py:
+- load_shipments(directory) -> shared LoadResult
+    Enumerate dataset/shipments/*.json (filename is never treated as the
+    identifier, consistent with the manifest/vessel loaders in Tasks 1-3),
+    parse files in sorted path order and return valid records plus the
+    shared structured diagnostics. Recoverable malformed JSON or schema
+    records are diagnosed and skipped; directory or I/O failures propagate.
+    Optional keys are not needed by Task 4. The common valid-record and
+    diagnostic shape is defined in INTEGRATED-CONTRACT-PLAN.md.
+- read_customer_profiles(path) -> list[dict]
+    If the file is absent, return []. Otherwise open with csv.DictReader
+    (newline=""), require the exact five-field header in the mandated order,
+    and require each row to contain exactly those fields. Let decoding,
+    CSV, and schema errors propagate. An existing empty file is malformed
+    because it has no header; do not treat it as absent. Return each valid
+    data row as the original string values without reformatting so untouched
+    customers' formatting remains unchanged.
+- write_customer_profiles(path, rows) -> None
+    Project recommendation for safe persistence (not a PDF mandate): write
+    a complete CSV to a uniquely named temporary file in the same
+    directory as path, using newline="", csv.DictWriter with fieldnames in
+    the exact required order, writeheader() exactly once, then writerows.
+    Close successfully before atomically replacing path with os.replace.
+    Never open the destination itself in truncating mode. On failure,
+    propagate the write error, leave any existing destination intact, and
+    clean up only the specific temporary file created by this attempt. The
+    caller creates the exports/ parent when needed. This remains one full
+    rewrite from the in-memory list, never append mode.
+
+operations.py:
+- normalize_key(text: str) -> str   [NEW for Task 4]
+    text.strip().casefold(). casefold() is used rather than .lower() per
+    Python's own docs recommendation for caseless matching, which matters
+    for the accented characters already present in the real dataset (e.g.
+    "Vänern Tools AB", "Göta Paper Cooperative") even though casefold and
+    lower happen to agree on these particular Swedish characters; casefold
+    is the more defensible general choice for CodeGrade-alternate-data
+    safety since it is not guaranteed to agree with lower() on every
+    Unicode string in general. Used both to match the typed customer name
+    against shipment records AND to match the typed customer name against
+    already-written CSV rows' customer field (Section 3's replace-vs-append
+    decision, below).
+- aggregate_customer_profile(customer_query: str, shipments: list[dict]) ->
+  dict | None   [NEW for Task 4, FIRM]
+    key = normalize_key(customer_query); matches = [s for s in shipments if
+    normalize_key(s["customer"]) == key]. If matches is empty, return None
+    (caller prints "Customer not found." and touches no file — see the
+    main.py flow below). Otherwise compute, purely from matches, with no
+    printing and no I/O:
+      canonical_name  = matches[0]["customer"]   (the customer string as it
+                         appears in the FIRST matching shipment record, in
+                         load_shipments's sorted source-path order — see
+                         Section 5 for why this is an inferred choice, not
+                         a stated rule)
+      shipment_count  = len(matches)
+      total_weight_kg = sum(s["weight_kg"] for s in matches)     (a float;
+                         formatting to two decimals happens at the row-build
+                         step below, not here, so this function stays a
+                         plain numeric aggregate usable by a caller that
+                         might want the raw float)
+      express_count   = sum(1 for s in matches if s["priority"] == "EXPRESS")
+                         — see Section 5's flagged assumption
+      destinations    = sorted({s["destination"] for s in matches})
+                         (set for uniqueness, then ascending sort, per the
+                         "sort unique destination codes" requirement)
+    Returns {"customer": canonical_name, "shipment_count": shipment_count,
+    "total_weight_kg": total_weight_kg, "express_count": express_count,
+    "destinations": destinations} — the last field as a LIST of codes, not
+    yet joined, so this function stays reusable for a future task that might
+    want the same aggregate without a "|"-joined string.
+- build_profile_row(profile: dict) -> dict[str, str]   [NEW for Task 4]
+    Formats aggregate_customer_profile's output into the exact five string
+    fields the CSV needs: {"customer": profile["customer"],
+    "shipment_count": str(profile["shipment_count"]), "total_weight_kg":
+    f"{profile['total_weight_kg']:.2f}", "express_count":
+    str(profile["express_count"]), "destinations":
+    "|".join(profile["destinations"])}. This is the single place the
+    two-decimal formatting rule and the "|" join happen; keeping it separate
+    from aggregate_customer_profile keeps the numeric aggregate independently
+    testable against plain numbers (Section 4) without string-formatting
+    noise.
+- upsert_profile_row(existing_rows: list[dict], new_row: dict[str, str]) ->
+  list[dict]   [NEW for Task 4]
+    key = normalize_key(new_row["customer"]). Scans existing_rows for the
+    first row whose normalize_key(row["customer"]) == key. If found, returns
+    a new list equal to existing_rows with that one element REPLACED
+    in-place at its original index by new_row (all other rows, including
+    their exact original string formatting, passed through untouched). If
+    not found, returns existing_rows + [new_row] (append). This is the "safe
+    rewrite … temporary in-memory list" mechanism named in the spec, made
+    explicit as one small pure function so main.py never has to reason
+    about list mutation directly. If existing_rows ever already contains
+    more than one row matching key (not achievable by this program's own
+    normal operation, but conceivable in a hand-edited or CodeGrade-supplied
+    starting file), only the FIRST such row is replaced and any further
+    duplicate is left as-is — flagged as an edge case this program does not
+    attempt to silently repair, since the spec does not describe pre-existing
+    corrupt export files as an input this task must heal.
+
+main.py:
+- In the `elif selection == 4:` branch: (1) prompt "Customer name: " (verbatim
+  per Section 2's confirmed transcript); (2) load the shared shipment
+  result, retain its recoverable diagnostics for the service's stable
+  diagnostic output, and pass only its `.records` collection to
+  operations.aggregate_customer_profile(typed_text, records); (3) on None, print
+  "Customer not found." and return to the outer menu loop WITHOUT calling
+  either read_customer_profiles or write_customer_profiles — no file I/O of
+  any kind touches exports/customer-profiles.csv on this path, satisfying
+  "do not create or modify the export file" as a structural guarantee (the
+  code path simply never reaches the CSV functions), not just a documented
+  intention; (4) on a non-None profile, build the formatted row via
+  operations.build_profile_row(profile); (5) read existing rows via
+  data_access.read_customer_profiles(EXPORT_PATH) ([] if absent); (6) compute
+  the merged list via operations.upsert_profile_row(existing_rows, new_row);
+  (7) write it back via data_access.write_customer_profiles(EXPORT_PATH,
+  merged_rows); (8) print the literal string "Customer profile updated:
+  exports/customer-profiles.csv" — this exact literal, NOT an f-string built
+  from the real EXPORT_PATH value, because on Windows the real path object
+  would render with backslashes (exports\customer-profiles.csv) and the
+  spec's own transcript uses a forward slash; the file is still opened via
+  the real OS-appropriate path (e.g. os.path.join("exports",
+  "customer-profiles.csv") or a pathlib.Path, which both work correctly on
+  Windows for actual file I/O), only the PRINTED confirmation text is the
+  fixed forward-slash literal.
+- Recoverable shipment-file diagnostics remain available to operations.
+  Fatal directory or I/O failures propagate to an explicit, narrowly scoped
+  service error path. Do not turn them into an empty shipment collection,
+  "Customer not found.", or a successful profile; do not use a blanket
+  `except:`.
+
+Sort-and-join guarantee (explicit, restated): destinations must be collected
+into a set first (so a customer with three shipments to the same port still
+lists that code once), then sorted ascending as plain strings (matching the
+worked example's CPH < GOT < OSL alphabetical order), then joined with "|"
+with no surrounding spaces — never left in first-seen order and never
+sorted by shipment count or any other key.
+
+================================================================
+4. ACCEPTANCE CRITERIA CHECKLIST
+================================================================
+
+[ ] First write — file doesn't exist yet (real data, reproduces the
+    assignment's own worked example line-for-line): with
+    exports/customer-profiles.csv absent, export "Norra MedTech AB".
+    Real records SHP-1042..SHP-1049 (8 shipments, all customer "Norra
+    MedTech AB") give: destinations GOT, CPH, OSL, GOT, CPH, OSL, GOT, CPH
+    -> unique sorted {CPH, GOT, OSL}; weights 860.0 + 720.5 + 1500.0 + 500.0
+    + 940.0 + 300.0 + 1200.0 + 400.0 = 6420.50; EXPRESS records are SHP-1043,
+    SHP-1045, SHP-1048 -> express_count 3. Required file content after this
+    run, in full:
+      customer,shipment_count,total_weight_kg,express_count,destinations
+      Norra MedTech AB,8,6420.50,3,CPH|GOT|OSL
+    — an EXACT reproduction of the PDF's own worked example, hand-verified
+    against the real dataset above (not merely copied from the PDF text).
+    Console output must be exactly "Customer profile updated:
+    exports/customer-profiles.csv".
+
+[ ] Second distinct customer appended: next, export "Vänern Tools AB". Real
+    records SHP-1050 (OSL, 5250.0, STANDARD) and SHP-1067 (AAR, 620.0,
+    EXPRESS) give shipment_count 2, total_weight_kg 5870.00, express_count 1,
+    destinations sorted {AAR, OSL} -> "AAR|OSL". File must now contain
+    exactly three lines, header unchanged (still exactly one header line,
+    not duplicated), the Norra MedTech AB row unchanged from the previous
+    step, and a newly appended:
+      Vänern Tools AB,2,5870.00,1,AAR|OSL
+    in that order (row 2 first-created, row 3 newly appended — not
+    re-sorted alphabetically or otherwise reordered).
+
+[ ] Existing customer updated in place, no duplicate — this IS
+    test-ledger.csv's "Export" row ("Update existing customer" / "Export
+    same customer twice" / "One replaced row and no duplicate"): export
+    "Norra MedTech AB" a second time (same underlying data, so the
+    recomputed row is byte-identical to the first time). After this run the
+    file must still contain exactly THREE lines total (one header + two data
+    rows) — NOT four — with the Norra MedTech AB row still at its original
+    position (row 2) and still reading exactly
+    "Norra MedTech AB,8,6420.50,3,CPH|GOT|OSL", and the Vänern Tools AB row
+    at row 3 completely untouched. A failing implementation would either
+    append a second "Norra MedTech AB" row (four data lines) or would
+    reorder/duplicate the header — both must be checked for explicitly.
+
+[ ] Case-insensitive / whitespace-trimmed match updates the SAME row rather
+    than creating a differently-cased duplicate: querying " norra medtech ab "
+    (lowercase, leading/trailing spaces) or "NORRA MEDTECH AB" must resolve
+    to the same 8 shipments as "Norra MedTech AB", and the write step must
+    replace the existing row (still stored as "Norra MedTech AB", the
+    dataset's own canonical casing — see Section 5) rather than appending a
+    second row spelled "norra medtech ab" or "NORRA MEDTECH AB". File row
+    count must remain unchanged at two data rows after this query.
+
+[ ] Customer not found — no file created (fresh-start scenario): with
+    exports/customer-profiles.csv absent (or deleted before the test),
+    query a customer name that matches no shipment record case-insensitively
+    anywhere in the dataset (e.g. "Unknown Customer AB", confirmed absent
+    from every dataset/shipments/*.json customer field). Must print exactly
+    "Customer not found." and the file must NOT exist afterward — check via
+    file-existence test, not just console output.
+
+[ ] Customer not found — no file modified (file already present): repeat the
+    same not-found query after the file already holds the Norra MedTech AB /
+    Vänern Tools AB rows from earlier steps. Must again print exactly
+    "Customer not found." and the file's contents (and ideally mtime) must
+    be byte-for-byte identical to before the query — confirms the "not
+    found" path never opens the file for writing even when a file already
+    exists to potentially (wrongly) touch.
+
+[ ] Single-shipment customer, real data: export "Göta Paper Cooperative"
+    (only SHP-1070: GOT, 2750.0, STANDARD, hazardous=false,
+    temperature_controlled=false — no cargo_type key, which is irrelevant to
+    Task 4). Required row exactly:
+      Göta Paper Cooperative,1,2750.00,0,GOT
+    Confirms express_count prints as "0" (not blank, not omitted) and a
+    single destination needs no "|" character at all.
+
+[ ] Weight formatting always exactly two decimals, including a value whose
+    true sum has zero fractional part: a synthetic fixture (three shipments
+    of 1000.0, 2000.0, 3000.0 kg for one customer) must format
+    total_weight_kg as "6000.00", never "6000" or "6000.0" — checkable via
+    build_profile_row directly, independent of the shipped dataset.
+
+[ ] Weight formatting rounds rather than truncates on floating-point noise:
+    a synthetic fixture whose float sum lands on something like
+    6420.499999999999 due to binary rounding must still format as "6420.50"
+    (round-half-to-even at 2 decimals via Python's :.2f), not "6420.49" —
+    checkable directly against build_profile_row/aggregate_customer_profile
+    with constructed input, independent of the shipped dataset.
+
+[ ] Reload of the generated CSV to confirm valid format: after all the
+    real-data steps above, reopen exports/customer-profiles.csv with
+    csv.DictReader (a fresh read, independent of read_customer_profiles) and
+    confirm: the header row equals exactly
+    ["customer","shipment_count","total_weight_kg","express_count",
+    "destinations"]; exactly 2 data rows (or 3, if the "Göta Paper
+    Cooperative" step above was included in this same run); every row's
+    shipment_count and express_count parse as int(); every row's
+    total_weight_kg parses as float() AND, when re-formatted with :.2f,
+    equals the stored string exactly (confirms no stray 3rd decimal or
+    missing decimal ever got written); every row's destinations field is
+    non-empty and, when split on "|", yields codes in strictly ascending
+    sorted order with no repeats.
+
+[ ] Header written exactly once, verified structurally, not just visually:
+    after every write in every scenario above, count occurrences of the
+    literal header line "customer,shipment_count,total_weight_kg,
+    express_count,destinations" in the raw file text — must always be
+    exactly 1, including immediately after the very first creation and
+    after every subsequent append/replace.
+
+[ ] aggregate_customer_profile purity: calling it twice with the same
+    customer_query and the same shipments list must return equal dicts both
+    times, and must not mutate the input shipments list (no shipment dict
+    added/removed/changed) — checkable directly via unit test without
+    touching the dataset or any I/O.
+
+[ ] CodeGrade-alternate-data safety: the implementation must not hard-code
+    "Norra MedTech AB", "Vänern Tools AB", "Göta Paper Cooperative",
+    "SHP-1042".."SHP-1070", or any other sample identifier/value anywhere in
+    the code path (the five header field name literals and the two fixed
+    console-message literals in Section 2 are policy/protocol constants, not
+    sample data, and are therefore fine to hard-code); all aggregation must
+    be derived purely from parsing dataset/shipments at runtime and from the
+    user's typed customer name, per START-HERE.txt rule 7.
+
+[ ] Corresponds directly to test-ledger.csv's "Export" row (area="Export",
+    test_case="Update existing customer", input_summary="Export same
+    customer twice", expected_result="One replaced row and no duplicate") —
+    the third checklist item above is that exact scenario executed against
+    real data; updating test-ledger.csv itself is out of scope for this
+    planning task.
+
+================================================================
+5. SHARED INTERFACE CONTRACT AND PROJECT ASSUMPTIONS
+================================================================
+
+INTEGRATED-CONTRACT-PLAN.md is canonical for shared shipment loading,
+diagnostics, and project-root paths. Task 4 consumes valid records from that
+loader; its aggregation and CSV read/merge/write behavior remain
+task-specific.
+
+Project assumption 1 — express_count definition (not a PDF mandate):
+DATA-DICTIONARY.md and the Task 4 spec text never state what "express_count"
+counts; this plan assumes it means the number of that customer's shipments
+whose priority field equals the exact string "EXPRESS" (the same literal
+Task 3 already treats as one trigger for its EXPEDITE category). Evidence
+for this assumption, not proof of it: applying it to the real SHP-1042..
+SHP-1049 records for "Norra MedTech AB" yields express_count = 3, matching
+the PDF's worked example. The PDF does not state the rule in words; this
+plan adopts the inference as project policy, not a verbatim requirement.
+
+Project assumption 2 — which casing gets stored: the spec states matching is
+case-insensitive but never states what customer text gets WRITTEN to the row
+when the user's typed query differs in case/whitespace from the dataset's
+own stored spelling. This plan assumes the row stores the customer string
+exactly as it appears in the matched shipment JSON records (specifically,
+the first matching record in load_shipments's sorted source-path order),
+not the user's raw typed input — so repeated exports of the same logical
+customer under different typed casings always converge on one stable
+spelling rather than the CSV row's casing drifting to whatever was typed
+most recently. If the shipped or CodeGrade-alternate dataset ever contains
+inconsistent casing for the "same" customer across different shipment files
+(not observed in the current dataset, where all of a given customer's
+records share one exact spelling), this rule picks the first such spelling
+encountered in filename order — flagged here as an untested edge case rather
+than a confirmed requirement.
+
+Project assumption 3 — success-message uniformity: Section 2 already notes
+the PDF gives only one console success string
+("Customer profile updated: exports/customer-profiles.csv") with no
+variant text for first-creation vs. append vs. replace; this plan treats
+that string as fixed and unconditional across all three outcomes rather than
+inventing per-outcome wording the spec never shows.
+
+================================================================
+7. INTEGRATION CONTRACT UPDATE
+================================================================
+
+Use the canonical loader, diagnostics, and project-root rules in
+INTEGRATED-CONTRACT-PLAN.md. In particular, shipment-directory loading
+returns valid records plus structured diagnostics; it does not silently
+discard malformed files, and fatal directory or I/O failures propagate.
+Project recommendation, not a PDF mandate: use the same-directory
+temporary-file and atomic-replace procedure described in Section 3 so a
+failed write does not truncate or damage an existing export.
+
+Project policy assumption, not an assignment mandate: `express_count` is
+the number of matching shipments whose `priority == "EXPRESS"`. This is
+supported by the supplied worked example, which yields the shown count of
+3, but is not stated as a rule in the PDF. Keep the exact CSV header,
+worked-example row, prompt, success/error strings, and no-match no-write
+behavior unchanged.

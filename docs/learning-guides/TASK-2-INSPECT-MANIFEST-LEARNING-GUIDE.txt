@@ -1,0 +1,107 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 2: INSPECT A VESSEL MANIFEST - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to follow identifiers across vessel, port-call, manifest and shipment
+records, while keeping date parsing and missing links understandable. This is
+an educational guide, not a finished implementation.
+
+Use beside: BluePrints_2/03-INSPECT-VESSEL-MANIFEST-DETAILS.txt
+
+What you are learning
+- How records in different files connect through IDs.
+- How to normalize a name and compare dates.
+- How to select the earliest eligible record with a tie-breaker.
+- How to distinguish declared, resolved and missing shipments.
+- How optional fields differ from required fields.
+
+Terms, functions and exceptions to know
+- strip(): a string method that removes whitespace at the beginning and end.
+- casefold(): a string method for case-insensitive comparison. Keep the
+  original display name separately if the report needs its original spelling.
+- datetime.strptime(): parses text using a known format. For the user date,
+  the required format is %Y-%m-%d. Bad date text raises ValueError.
+- strftime(): formats a parsed date for display. The PDF example uses day,
+  full month name and year, such as 18 October 2026.
+- csv.DictReader: reads CSV rows as dictionaries keyed by the header names.
+- json.load(): reads one JSON object from a file.
+- dict.get(): reads an optional field with a fallback value. Missing Boolean
+  flags hazardous and temperature_controlled count as false.
+- FileNotFoundError and json.JSONDecodeError: expected file-boundary errors;
+  handle them where the task can report a useful unavailable-record result.
+- ValueError: can indicate an invalid user date or a date/number conversion
+  problem. Keep user-input validation separate from data-row handling.
+
+Trace the data relationship
+Think of each record as a link in a chain:
+1. The user's vessel name identifies one registered vessel.
+2. vessel_id connects that vessel to port_calls.csv.
+3. call_id connects the selected port call to its manifest.
+4. Each shipment_id in the manifest connects to a shipment record.
+
+Do not jump from a filename to an assumption. Compare the required identifier
+field in each record.
+
+Implementation learning steps
+
+Step 1: Separate the vessel prompt from the date prompt
+Display registered vessels first. Normalize the name by trimming it and
+comparing it case-insensitively. If it is unknown, print the specified message
+and return. Only after the vessel is found should you collect the reference
+date.
+
+Step 2: Make date retry local
+Parse the entered date using the exact ISO input shape. If it is invalid, print
+the required date error and ask for the date again. Do not ask for the vessel
+again or return to the main menu until a valid date is collected.
+
+Step 3: Filter calls before choosing one
+For each call, match vessel_id and parse arrival_date. Keep only calls on or
+after the reference date. Then choose the earliest date. If dates tie, compare
+call_id alphabetically. Decide how each candidate is represented before
+writing the selection logic.
+
+Step 4: Resolve the manifest by its business key
+Search manifest records for the selected call_id. A filename may look related,
+but the call_id field is the authority. If there is no readable valid
+manifest, show the required unavailable message and return.
+
+Step 5: Resolve shipments in manifest order
+Walk the shipment_ids in the manifest from first to last. For each ID, search
+shipment records by their shipment_id field. If found, print its line and add
+its weight to the resolved total. If absent, print MISSING RECORD and increase
+the missing count. Keep the declared count separate from the resolved count.
+
+Step 6: Respect optional shipment fields
+Use a false fallback for absent Boolean flags. When displaying cargo_type,
+show NOT PROVIDED if the field is absent. Do not treat an optional field as a
+reason to reject an otherwise readable shipment.
+
+Step 7: Format only after calculation
+Keep dates and weights as values while selecting and totaling. Convert the
+arrival date to the display form at output time, and format the resolved total
+with exactly two decimal places.
+
+Important distinction
+The date typed by the user and arrival_date values read from the dataset are
+different inputs. The user-date error has an exact required message and retry
+behavior. Do not let one unusable data row corrupt the entire service; use the
+shared data-error policy for file and record failures.
+
+Reasoning questions
+- Which ID connects each pair of record types?
+- Why is arrival_date >= reference_date inclusive?
+- How does the tie-break work only after the earliest date is known?
+- Why does a missing shipment increase declared/missing counts but not weight?
+- Which fields have false or NOT PROVIDED fallbacks, and which are required?
+
+Test checklist
+[ ] Name lookup trims spaces and ignores case.
+[ ] An invalid date retries only the date prompt.
+[ ] A call on the reference date qualifies; earlier calls do not.
+[ ] Equal earliest dates choose the alphabetically smallest call_id.
+[ ] IDs are matched from record fields, not inferred from filenames.
+[ ] Missing shipment records remain in manifest order and are counted.
+[ ] Optional fields use the specified defaults.
+[ ] Unknown vessel, no upcoming calls and invalid manifest use their exact
+    messages and return to the main menu.

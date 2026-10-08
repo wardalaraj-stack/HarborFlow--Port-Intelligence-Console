@@ -1,0 +1,85 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+TASK 5: PORT CALLS BY MONTH - LEARNING AND CODING GUIDE
+
+Purpose
+Learn to validate a month, parse dates from CSV, resolve vessel IDs and produce
+a correctly ordered planning report. This is an instructional guide, not
+finished code.
+
+Use beside: BluePrints_2/06-PORT-CALLS-BY-MONTH-DETAILS.txt
+
+What you are learning
+- How to validate user input separately from values stored in a data file.
+- How CSV rows connect to JSON vessel records through identifiers.
+- How to parse and compare dates.
+- How to skip one invalid row without abandoning the full report.
+- How multiple sort keys produce a predictable order.
+
+Terms, functions and exceptions to know
+- input(): collects text. The month is still text until converted.
+- int(): converts whole-number text to an integer. Bad text raises ValueError.
+- csv.DictReader: reads each port-call row as a dictionary using CSV headers.
+- datetime.strptime(): parses an ISO date such as 2026-10-02; malformed dates
+  raise ValueError.
+- strftime(): formats a date for the report, such as 02 October 2026.
+- calendar.month_name: an optional standard-library lookup for displaying the
+  name of a validated month number.
+- sorted(): creates the report order. Use arrival date first and vessel name as
+  the second key; do not rely on the CSV's original order.
+- dict: use vessel records keyed or searched by vessel_id to find display names.
+- csv.Error, FileNotFoundError, ValueError: handle at their relevant input or
+  file boundaries. Do not let one bad date invalidate all other rows.
+
+Separate the two kinds of validation
+User month: accept only an integer from 1 through 12. Non-integer and
+out-of-range values both print exactly:
+Error - Enter a month from 1 to 12.
+Then repeat only the month prompt.
+
+Dataset dates: parse each row's arrival_date separately. If one date is
+invalid, report and skip that row while continuing with later rows. A valid
+month choice does not guarantee every dataset date is valid.
+
+Learning steps
+
+Step 1: Make a small input-validation loop
+Keep asking for the month until the input converts to an integer in the allowed
+range. Handle conversion failure and range failure with the same required error.
+Do not move on to loading/reporting until the month is valid.
+
+Step 2: Read calls by named columns
+Use the CSV header names to read call_id, vessel_id, port_code and arrival_date.
+Avoid depending on the order of columns in the physical file.
+
+Step 3: Resolve the vessel relationship
+Find the registered vessel whose vessel_id matches the call row. The report
+needs a vessel name, but the CSV row may only provide the ID. If no vessel
+matches, report and skip that call row.
+
+Step 4: Parse each date in its own row boundary
+Parse arrival_date and compare its month with the selected month. Keep the
+try/except narrow enough to identify the bad row and continue. Do not catch all
+exceptions around the whole report.
+
+Step 5: Sort after filtering
+Collect valid matching calls, then order them by arrival date and vessel name.
+The second key matters when calls share a date. Format the month heading and
+call dates only after selection is complete.
+
+Step 6: Handle an empty result clearly
+If no valid calls match, print exactly: No port calls found.
+
+Reasoning questions
+- Why are month input errors and bad CSV dates handled in different places?
+- Why does vessel_id need to be matched to a vessel record?
+- What does the vessel-name tie-break do when two calls share a date?
+- Why should a bad row be skipped rather than ending the report?
+
+Test checklist
+[ ] Months 1 and 12 are accepted; 0, 13, decimals and letters are rejected.
+[ ] Invalid input repeats only the month prompt with the exact error.
+[ ] A bad data date is reported/skipped while later rows remain available.
+[ ] An unknown vessel_id is reported/skipped.
+[ ] Matching calls sort by arrival date and then vessel name.
+[ ] Display uses the month name and day-month-year date form.
+[ ] No valid match prints the exact no-calls message.

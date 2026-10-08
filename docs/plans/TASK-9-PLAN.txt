@@ -1,0 +1,393 @@
+TASK 9 PLAN — HarborFlow Port Intelligence Console: Search Incident Reports
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-28
+
+================================================================
+1. SCOPE AND EVIDENCE
+================================================================
+
+Scope is Task 9 only — “Search incident reports” (menu option 9). This is
+a planning document, not an implementation. File-scope statements in this
+section describe the original Task 9 drafting pass. The coordinated
+revision edits planning documents only; it does not modify application
+code, source data, test-ledger.csv, START-HERE.txt, or readme.txt. No
+project commands, tests, or builds were run.
+
+Authoritative scope source:
+C:\Users\conda\Downloads\DIT014 HT26 Assignment 2 - HarborFlow Port
+Intelligence Console.pdf, Task 9 on PDF pages 8–9. The exact requirement,
+cache schema, worked query, ordering rules, and cache invalidation rules
+are transcribed in Section 2. The PDF’s suggested architecture on page 10
+is used only to place responsibilities; it does not expand Task 9 behavior.
+
+Read-only supporting evidence:
+- START-HERE.txt: preserve the supplied directory structure; read dataset
+  files with relative paths; keep supplied dataset files read-only; do not
+  hard-code supplied records; Task 9 may create or refresh
+  dataset/incident-index.json; other persistent product outputs belong
+  under exports/.
+- dataset\DATA-DICTIONARY.md: incident JSON records require incident_id,
+  call_id, title, and report; all identifiers and report text are strings.
+- dataset\incidents\inc-087.json: INC-087, “Gate congestion delay,” with a
+  report containing the word “delay” but not “reefer.”
+- dataset\incidents\inc-102.json: INC-102, “Reefer temperature deviation,”
+  containing the words “reefer” and “temperature.”
+- dataset\incidents\inc-119.json: INC-119, “Reefer transfer delayed,”
+  containing “reefer” and “delay” after normalization.
+- The supplied reports include repeated ordinary words (for example, the
+  word “the” occurs more than once in INC-102), which exercises
+  de-duplication of an incident ID within one index word list.
+- dataset\incidents\inc-131.json: INC-131, “Routine inspection completed,”
+  a supplied report with no “reefer” or “delay” match.
+- test-ledger.csv: the Search / Two query words row specifies query
+  “Search reefer delay” and expects positive matches scored and sorted;
+  the Cache / Corrupt cache row specifies replacing the cache with invalid
+  JSON and then searching, expecting the cache to be rebuilt. Both rows
+  have status “Not run”; they are planned evidence only, not passed tests.
+- TASK-0-PLAN.txt through TASK-8-PLAN.txt: read-only neighboring-plan
+  structure, menu/return behavior, shared loader contracts, and incident
+  sanitization boundaries from Task 6. The integrated contract is
+  canonical for shared interfaces and policies; task plans add details
+  without making those interfaces provisional.
+
+Review is optional internal workflow, not an assignment requirement or
+implementation gate. The integrated contract and this plan's Section 9
+state the current resolved policies; no test execution or approval is
+claimed.
+
+================================================================
+2. TASK 9 REQUIREMENT SUMMARY (from the assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Build a reusable evidence index so operations can
+retrieve prior incidents by keywords.
+
+Exact Task 9 requirement:
+
+Normalize all incident report text to lowercase words, removing punctuation
+with regex. Build an inverted index whose keys are words and whose values
+are lists of incident IDs containing that word. Also build a title lookup
+whose keys are incident IDs and whose values are incident titles. Save both
+structures in dataset/incident-index.json and load the cached file on later
+runs.
+
+Required top-level cache shape:
+
+{
+  "index": {
+    "delay": ["INC-087", "INC-119"],
+    "reefer": ["INC-102", "INC-119"],
+    "temperature": ["INC-102"]
+  },
+  "titles": {
+    "INC-087": "Gate congestion delay",
+    "INC-102": "Reefer temperature deviation",
+    "INC-119": "Reefer transfer delayed"
+  }
+}
+
+Normalize the user’s query with the same rules. Score an incident by the
+number of distinct query words whose index list contains its ID. Print only
+positive matches, sorted by descending score and then incident ID. Use the
+cached title lookup for the displayed title.
+
+Exact demonstrated interaction/output:
+
+  Search incident reports: reefer delay
+  Matches for 'reefer delay':
+  - INC-119 | score 2 | Reefer transfer delayed
+  - INC-087 | score 1 | Gate congestion delay
+  - INC-102 | score 1 | Reefer temperature deviation
+
+Additional literal requirements:
+- Do not add an incident ID twice to one word’s list when a word repeats in
+  a report.
+- Write valid JSON with exactly the top-level keys `index` and `titles`.
+- Sort word keys, title keys, and every incident ID list.
+- Before any cache decision, successfully discover a non-empty sorted list
+  of source incident JSON paths and stat every source file; discovery/stat
+  errors are fatal, and an empty source list is an explicit source-data
+  error. If an existing cache has the exact valid schema and is fresh against
+  all source mtimes, reuse it without parsing or reading incident JSON
+  contents, even if those files would currently fail JSON or incident-schema
+  validation. If the cache is missing, malformed, wrong-schema, or stale,
+  rebuild it from source records.
+- Searching must use the loaded index and title lookup rather than
+  rereading incident reports.
+- The query and report must use the same regex-based normalization rules.
+- Print only positive matches; a zero-score incident must not appear.
+
+The PDF does not prescribe the exact query prompt beyond the demonstrated
+“Search incident reports: ” interaction, does not define an empty-query
+message, and does not define diagnostics for unreadable/malformed source
+incident files or invalid cache shapes beyond “malformed cache” requiring a
+rebuild. These are integration decisions and are not presented as
+additional PDF-mandated strings.
+
+================================================================
+3. PROPOSED DESIGN AND MODULE RESPONSIBILITIES
+================================================================
+
+Use the shared loading, root-path, and fatal-error contracts in
+INTEGRATED-CONTRACT-PLAN.md while preserving the explicit Task 9 behavior
+in Section 2. Task-specific helper names below are descriptive proposals.
+
+data_access.py:
+- Reuse `load_json(path)` and `load_incidents(directory)` from the shared
+  contract. Load every `.json` file
+  under the relative path `dataset/incidents/`; do not hard-code the four
+  supplied filenames or report bodies.
+- Validate the required incident fields from DATA-DICTIONARY.md:
+  `incident_id`, `call_id`, `title`, and `report`. Preserve strings as
+  strings. Do not read `exports/sanitized/` as a substitute for the raw
+  incident reports: Task 6’s sanitized output is separate and must not
+  change the source used for indexing.
+- Provide cache read/write helpers for the exact relative path
+  `dataset/incident-index.json`. The writer should serialize valid JSON
+  with only `index` and `titles`, deterministic sorted keys, and sorted
+  incident-ID lists. Use UTF-8 and a safe complete write; do not alter
+  source incident files.
+- Provide cache freshness evaluation. Before any cache decision, discover a
+  non-empty sorted list of source incident JSON paths and stat every source
+  file; discovery/stat errors are fatal, and an empty source list is an
+  explicit source-data error. Reuse an existing cache only if it parses, has
+  exactly the assignment's top-level `index` and `titles` keys with the
+  required value types, and is not older than any source incident JSON file.
+  A fresh valid cache is reusable without parsing or reading incident JSON
+  contents. Missing, malformed, wrong-schema, or stale cache data triggers a
+  rebuild. Do not add non-assignment cross-map or sort validations; see
+  Section 9.
+- A missing cache, invalid JSON, or wrong cache schema triggers rebuild.
+  Other cache read I/O or permission errors propagate explicitly; do not
+  misclassify an inaccessible cache as an ordinary cache miss.
+- Keep source-file metadata and cache metadata handling separate from
+  search scoring. During a rebuild, skip malformed source files only when at
+  least one valid incident record remains. If no valid source incident
+  records remain, fail explicitly and leave any existing cache untouched;
+  never turn missing or unusable source data into an empty successful index.
+
+text_tools.py:
+- Provide one pure normalization helper used for both reports and queries,
+  such as `normalize_words(text: str) -> list[str]`. Use the exact shared
+  tokenizer specified in Section 9 for both indexing and searching.
+- Preserve repeated words in the normalized token sequence only as needed
+  for scoring logic; the index builder must de-duplicate each incident ID
+  per word. Index report text only, not titles; the PDF specifies incident
+  report text and stores titles separately for display.
+- Keep normalization free of I/O, cache reads, printing, and mutation of
+  source records. Task 6’s sanitization helper must remain separate: do not
+  replace the raw report with sanitized output before indexing.
+
+operations.py:
+- Provide a pure index builder such as
+  `build_incident_index(incidents) -> {"index": ..., "titles": ...}`.
+  For each report, normalize words once, add the incident ID at most once
+  to each word’s list, and store the incident title under its ID.
+- Sort word keys, title keys, and each word’s incident-ID list before the
+  result is serialized or returned. If duplicate incident IDs occur in
+  source records, keep the first valid record in sorted source-path order
+  and diagnose later duplicates, per Section 9.
+- Provide a pure query scorer such as
+  `search_incident_index(cache, query) -> list[SearchMatch]`. Normalize
+  the query with the same helper, collapse repeated query words before
+  scoring, count one point for each distinct query word whose posting list
+  contains the incident ID, discard zero scores, and sort by
+  `(-score, incident_id)`.
+- Use only the loaded cache in the scorer. It must not open incident JSON
+  files or reconstruct titles from source records during a search.
+
+main.py:
+- In the selection == 9 branch, derive source and cache paths from the
+  project root; rebuild only when the cache is missing, malformed,
+  wrong-schema, or older than any source incident file. Otherwise load the
+  cache once.
+- Prompt for the search query using the project’s established prompt style,
+  with the demonstrated shape `Search incident reports: `. Do not print
+  a source-report scan or perform per-query incident-file reads.
+- Print the required heading `Matches for '{query}':` using the user’s
+  entered query for display, while scoring the normalized query. Print each
+  positive match as
+  `- {incident_id} | score {score} | {cached title}` in the required
+  ordering. Use the cached title lookup, not a fresh source lookup.
+- Return to the existing outer menu after the search, preserve options 1–8
+  and 10, and do not change the shell’s exact invalid-menu or closure
+  behavior. Keep cache/source errors explicit and narrowly handled; do
+  not add a blanket exception or a success-shaped empty result.
+- The exact no-match and empty-query behavior is not specified by the PDF.
+  Use the deterministic project messages selected in Section 9; do not
+  mislabel them as literal Task 9 requirements.
+
+================================================================
+4. DATA-GROUNDED ACCEPTANCE CASES (planned, not run)
+================================================================
+
+[ ] Exact ledger search case: enter `reefer delay`. Normalize the query
+    with the same report rule and print exactly:
+      Matches for 'reefer delay':
+      - INC-119 | score 2 | Reefer transfer delayed
+      - INC-087 | score 1 | Gate congestion delay
+      - INC-102 | score 1 | Reefer temperature deviation
+    INC-119 contains both distinct query words, while INC-087 contains
+    `delay` and INC-102 contains `reefer`. This maps directly to the
+    Search / Two query words row in test-ledger.csv, whose status remains
+    Not run.
+
+[ ] Exact cache schema and deterministic serialization: after rebuilding
+    from the four supplied incident files, dataset/incident-index.json is
+    valid JSON with top-level keys exactly `index` and `titles`. Word keys
+    and title keys are sorted; every posting list is sorted and contains no
+    repeated incident ID. Titles include all four supplied IDs, including
+    INC-131 even though it has no positive result for `reefer delay`.
+    This acceptance case must inspect the generated cache, not merely the
+    printed search output.
+
+[ ] Repeated report words do not duplicate postings: INC-102’s report uses
+    repeated ordinary words such as “the”; its posting list for each
+    normalized word contains `INC-102` at most once. Construct an
+    additional in-memory report with a repeated keyword and verify the same
+    property without modifying supplied JSON.
+
+[ ] Distinct query-word scoring: query `reefer reefer delay` and verify
+    repeated `reefer` contributes one point, so INC-119 remains score 2,
+    INC-087 remains score 1, and INC-102 remains score 1. Query words that
+    normalize to punctuation-only/empty tokens contribute nothing.
+
+[ ] Case and punctuation normalization: query variants such as
+    `REEFER, delay!` and `reefer-delay` according to the settled regex
+    token policy. They must use the same normalization as report text and
+    yield the corresponding positive matches; punctuation must not create
+    an extra indexed word.
+
+[ ] Cached-title lookup: alter only the in-memory loaded `titles` mapping
+    in an isolated fixture and verify search output follows the cached
+    title value rather than rereading the incident JSON. The production
+    implementation must not use this fixture to mutate supplied data.
+
+[ ] Missing-cache rebuild: remove or isolate
+    `dataset/incident-index.json`, run the search, and verify a valid cache
+    is created from current incident files before scoring. The source
+    incident JSON files remain unchanged.
+
+[ ] Corrupt-cache ledger case: replace the cache contents with invalid JSON,
+    then search `reefer delay`. The cache must be rebuilt and the exact
+    positive result ordering above must be restored. This maps directly to
+    the Cache / Corrupt cache row in test-ledger.csv, whose status remains
+    Not run.
+
+[ ] Stale-cache rebuild: create a valid cache, then make a source incident
+    file newer than the cache in an isolated fixture. The next search must
+    rebuild before scoring. A cache newer than every source incident file
+    must be reused without rereading source reports during the search.
+
+[ ] No-positive-match behavior: search a normalized term absent from all
+    reports, such as `unicorn`, and verify no `- ...` match lines are
+    printed. The exact no-match message/heading policy must be selected at
+    integration because the PDF specifies only “print only positive
+    matches,” not a literal zero-results message.
+
+[ ] Runtime data and console integration: use relative paths, discover
+    incident files at runtime, reach Task 9 through menu option 9, return
+    to the menu after the search, preserve option 10 closure, and never
+    embed supplied incident IDs, titles, report words, or expected scores
+    as application data. The source dataset and test-ledger.csv remain
+    unchanged.
+
+================================================================
+5. SHARED-INTERFACE AND REUSE RISKS
+================================================================
+
+- Use the shared `load_json` and `LoadResult[Incident]` contracts in
+  INTEGRATED-CONTRACT-PLAN.md. Preserve records and diagnostics at the
+  data-access boundary; do not introduce a second incident directory walk.
+  Task 9 needs the raw `report` and `title`; Task 6's sanitized text is an
+  output artifact and must never replace the raw report for indexing.
+- `dataset/incident-index.json` is unusual because it is a generated
+  persistent file inside `dataset/`, while START-HERE.txt otherwise treats
+  supplied dataset inputs as read-only. Task 9 explicitly authorizes this
+  cache to be created/refreshed; do not generalize that permission to
+  incident source files, weather, calls, manifests, shipments, or vessels.
+- Cache freshness uses only source incident JSON modification times, never
+  includes the generated cache in the source glob, and treats equal
+  modification times as fresh. For every cache decision, discover a
+  non-empty sorted source-file list and stat every source file first; if a
+  listed source file disappears or cannot be statted, fail explicitly and
+  leave the existing cache untouched. Rebuild from that sorted list when the
+  cache is missing, malformed, wrong-schema, or stale.
+- Cache validation must distinguish a valid cache from malformed JSON and
+  wrong assignment schema. Per the coordinated contract in
+  INTEGRATED-CONTRACT-PLAN.md, validate the exact `index` and `titles`
+  top-level keys, required value types, and freshness only. Do not reject a
+  sparse cache solely for unsorted entries or cross-map inconsistencies.
+- Report normalization and query normalization must share one helper.
+  Duplicating regex code in the index builder and search branch risks
+  mismatched punctuation/case behavior and violates the reusable-index
+  outcome.
+- Search scoring must use distinct normalized query words. Otherwise a
+  repeated query token can inflate scores beyond the PDF’s “number of
+  distinct query words” rule.
+- Title sorting/serialization and result sorting are separate contracts:
+  cache title keys are sorted for JSON determinism, while result rows sort
+  by descending score and then incident ID. Do not sort displayed results
+  alphabetically by title.
+- The index contains report words, not incident titles, as specified by the
+  assignment. Titles are stored separately for display and must be read
+  from the cached `titles` lookup during search.
+
+================================================================
+6. POLICIES RESOLVED BY THE COORDINATED REVISION
+================================================================
+
+The tokenizer, empty-query/zero-result messages, source-load failure policy,
+cache schema/freshness boundary, duplicate incident-ID rule, and atomic
+cache write are fixed in Section 9 and INTEGRATED-CONTRACT-PLAN.md. Cache
+serialization remains sorted and deduplicated as required; cache reuse does
+not impose extra consistency checks. Review is optional internal workflow,
+not a requirement or gate.
+
+End of the original Task 9 planning draft. The coordinated revision changes
+plan documents only; it does not implement code or run project commands,
+tests, or builds.
+
+================================================================
+9. INTEGRATION POLICY RESOLUTION
+================================================================
+
+Use the common loader, path, and source-error behavior in
+INTEGRATED-CONTRACT-PLAN.md. Tokenize both source reports and queries with
+the same exact expression:
+`re.findall(r"[^\W_]+", text.casefold(), flags=re.UNICODE)`.
+Underscores and punctuation delimit tokens; Unicode letters and digits are
+included. For duplicate incident IDs, the first valid record in sorted
+source-path order wins and later duplicates are diagnosed and skipped.
+
+For every cache decision, first successfully discover a non-empty sorted list
+of incident JSON source paths and stat every source file. Discovery or stat
+errors remain fatal and explicit; an empty source-file list is an explicit
+source-data error, not a reusable cache. Cache validation is limited to the
+exact top-level `index` and `titles` objects, their required string/list
+value types, and freshness against all discovered source mtimes. If an
+existing cache has that valid schema and is fresh, reuse it without parsing
+or reading incident JSON contents, even if those files would currently fail
+JSON or incident-schema validation. Missing cache, malformed JSON, wrong
+schema, and stale cache trigger rebuild; other cache I/O errors propagate.
+Do not rebuild a sparse cache merely because postings are unsorted or
+cross-map IDs are absent. Equal cache/source modification times are fresh
+because the cache is not older. Rebuild serialization itself remains sorted
+and deduplicated as mandated.
+
+When rebuilding, load the discovered source records. Individual malformed
+incident files may be skipped with diagnostics when at least one valid
+incident record remains. If no valid source incident records remain, fail
+explicitly and leave any existing cache untouched; do not write or present
+an empty index as success. For duplicate incident IDs, the first valid
+record in sorted path order wins and each later duplicate is diagnosed and
+skipped. Use a same-directory temporary file followed by atomic replace for
+cache writes, and surface write failures.
+
+For a query that normalizes to no words, print
+"Search query contains no searchable words." and do not score. For a
+non-empty query with zero positive results, print the required heading
+followed by "No matching incidents found."; print no zero-score rows.
+These messages and the cache-validator boundary are project policies, not
+additional PDF requirements. The exact worked search output and all other
+mandated cache rules remain unchanged.

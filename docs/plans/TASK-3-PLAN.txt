@@ -1,0 +1,409 @@
+TASK 3 PLAN — HarborFlow Port Intelligence Console: Identify Priority Cargo
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-27
+
+================================================================
+1. SCOPE AND PLANNING EVIDENCE
+================================================================
+
+Scope and evidence (no approval claimed):
+This plan covers Task 3 only — "Identify priority cargo" (menu option 3). It
+proposes no application code changes; main.py, operations.py, data_access.py,
+and text_tools.py were opened strictly read-only for inspection of existing
+structure (all remain stubs/placeholders at planning time; Task 1 and Task 2
+plans exist but their code has not yet been written, noted here for context
+only, not something this plan touches or fixes). It imports no "Assignment 1"
+content and makes no reference to any other assignment or unrelated
+codebase. It does not propose touching any protected file:
+dataset/port_calls.csv, dataset/manifests/*.json, dataset/shipments/*.json,
+dataset/vessels/*.json, dataset/DATA-DICTIONARY.md, test-ledger.csv,
+readme.txt, and START-HERE.txt were all opened strictly read-only for
+evidence (confirming the exact worked example against real data — see
+Section 4 — and confirming that HFL-BAD-9999 has a port_calls.csv row but no
+matching manifest file). File-scope statements in this section describe
+the original Task 3 drafting pass. The coordinated revision edits planning
+documents only; it does not modify application code, source data,
+test-ledger.csv, or readme.txt. No project commands, tests, or builds were
+run as part of this plan revision.
+
+Design considerations (not a review approval):
+The design below (Section 3) implements the classification rule table as a
+single if/elif/elif/else chain in exactly the table's stated order —
+hazardous, then temperature_controlled, then (priority == EXPRESS or
+weight_kg >= 5000), then the STANDARD fallback — so that FIRST-MATCH
+semantics are structurally guaranteed rather than merely intended: once an
+earlier branch's condition is true, no later condition is ever evaluated,
+which is the only way to satisfy "classify every resolved shipment using the
+FIRST matching rule" when a shipment could satisfy more than one row (e.g. a
+shipment with hazardous=true AND temperature_controlled=true must resolve to
+CONTROLLED, never COLD CHAIN — reasoned through in Section 4 since
+no shipment in the shipped dataset has both flags true simultaneously). The
+function is pure: classify_shipment(shipment: dict) -> tuple[str, str] reads
+only its single dict argument, performs no I/O, no printing, and no mutation
+of its input, and returns a (category, reason) pair — satisfying the
+engineering note verbatim and making it trivially unit-testable against
+constructed fixtures independent of the shipped dataset.
+Reuse-risk flags (as required by the dependency note):
+ - Task 3 needs, for one typed call_id: (a) resolve call_id against
+   port_calls.csv rows (trim + case-insensitive match on the call_id
+   column — NOT vessel name, unlike Task 2, since Task 3 asks for a call ID
+   directly); (b) load that call's manifest via call_id (not filename);
+   (c) resolve every shipment_id in manifest["shipment_ids"], in manifest
+   order, against the shared manifest and shipment `LoadResult.records`
+   specified in INTEGRATED-CONTRACT-PLAN.md. The operation retains loader
+   diagnostics and selects by internal business IDs, not filenames.
+ - Call-ID resolution is shared with Task 7; Task 2 instead selects calls
+   by the vessel_id resolved from a vessel name.
+ - Unlike Task 2, Task 3's manifest walk does NOT print a "MISSING RECORD"
+   line for an unresolved shipment_id. The spec says "classify every
+   RESOLVED shipment" — an unresolved id is simply skipped: it produces no
+   printed line and is not counted in any category total. This is a
+   deliberate divergence from Task 2's behavior and must not be copied
+   from Task 2's per-line loop verbatim; flagged here so the implementer
+   does not assume the two tasks share identical line-printing logic just
+   because they share loaders.
+ - classify_shipment is a Task 3 operation over the shared shipment record
+   shape and remains a pure helper.
+ - Resolved reason-string policy: use "express service" for the EXPEDITE
+   category whether triggered by EXPRESS priority or by weight_kg >= 5000.
+   This is one deterministic reason for the rule's single category and is a
+   project assumption supported by the assignment's table/example, not a
+   separate PDF-mandated phrase.
+These are design notes and integration decisions, not a claim of reviewer
+approval.
+
+Acceptance criteria (planned, not run):
+test-ledger.csv line 3 is the "Relationships" campaign row ("Missing
+shipment" / "Inspect Nordic Relay from 2026-10-18" / "Missing record counted
+without crash") — that exact row is already claimed by TASK-2-PLAN.txt as
+Task 2's own acceptance evidence (Section 4 there). test-ledger.csv has no
+row of its own labelled specifically for Task 3 ("Identify priority cargo"
+does not appear as a distinct area/test_case pairing among the 11 existing
+rows). Per this plan's assignment, the "Relationships" row's STRUCTURE
+(known identifier / missing link / unknown identifier) is reused here as the
+acceptance-design template for Task 3, evaluated against Task 3's own real
+data rather than against Nordic Relay's specific scenario:
+ - known ID: call_id "HFL-AAR-2071" is a real, fully-resolvable call whose
+   manifest and all three shipments exist and parse — see Section 4, where
+   its expected output is shown to reproduce the assignment's worked example
+   line-for-line, including the totals line.
+ - missing manifest: call_id "HFL-BAD-9999" is a real port_calls.csv row
+   (VSL-003, GOT, arrival_date "2026-02-30") that has NO corresponding file
+   in dataset/manifests (confirmed: the 5 manifest files present are for
+   HFL-AAR-2071, HFL-CPH-2017, HFL-GOT-2048, HFL-GOT-2105, HFL-OSL-2090 —
+   HFL-BAD-9999 is absent). Because Task 3 never inspects arrival_date at
+   all, this call's invalid calendar date is irrelevant to Task 3; what
+   matters here is purely the missing manifest file, giving a real-data
+   "Manifest unavailable." case without needing a mock.
+ - unknown call: any call_id absent from port_calls.csv entirely (e.g.
+   "HFL-ZZZ-9999") must print "Port call not found." and return to the menu.
+Section 4 below also adds classification-specific edge cases the
+"Relationships" row template does not itself cover (per-category triggers in
+isolation, first-match priority when multiple conditions could apply, and an
+empty-manifest / all-shipments-unresolved edge case), since those are unique
+to Task 3's business rule and have no analogue in Task 2. This plan does not
+mark Task 3 as validated or passed; it only defines what a future test run
+must check. No test is claimed as performed.
+
+No project tests, builds, or reviewer approvals are claimed by this plan
+revision.
+
+================================================================
+2. TASK 3 REQUIREMENT SUMMARY (verbatim from assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Turn raw shipment attributes into a documented operational
+decision.
+
+Ask for a call ID, remove surrounding spaces and match it case-insensitively.
+For that call, classify every resolved shipment using the FIRST matching
+rule below. Print the category and reason in manifest order, then summarize
+counts by category in the stated order. If the call is unknown, print
+"Port call not found." If its manifest is missing or malformed, print
+"Manifest unavailable." In either case, return to the menu.
+
+Rule table (exact order — first match wins):
+  1. hazardous is true                              -> CONTROLLED
+  2. temperature_controlled is true                  -> COLD CHAIN
+  3. priority is EXPRESS or weight_kg >= 5000         -> EXPEDITE
+  4. otherwise                                        -> STANDARD
+
+Example output (client contract — copy verbatim, only the data varies):
+  SHP-1045 | EXPEDITE | express service
+  SHP-1046 | CONTROLLED | hazardous cargo
+  SHP-1067 | EXPEDITE | express service
+  Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
+
+Reason strings are short lowercase phrases per category. The assignment
+gives two verbatim: "hazardous cargo" (CONTROLLED) and "express service"
+(EXPEDITE). This plan infers the remaining two in the same style:
+"temperature controlled" (COLD CHAIN) and "standard handling" (STANDARD).
+
+ENGINEERING NOTE (verbatim): Make classification a pure function that
+receives one shipment dictionary and returns both category and reason. Rule
+order is business policy and must be visible in the code.
+
+Error strings, printed verbatim with no extra text:
+  Port call not found.
+  Manifest unavailable.
+
+Per-line format (inferred from the example, one line per RESOLVED shipment,
+in manifest order): "{shipment_id} | {CATEGORY} | {reason}" — single spaces
+around each "|". No line is printed for an unresolved shipment_id (see
+Section 3 for why this differs from Task 2's MISSING RECORD line).
+
+Summary line (verbatim format from the example): "Category totals:
+CONTROLLED={n}, COLD CHAIN={n}, EXPEDITE={n}, STANDARD={n}" — all four
+categories always printed, in that fixed order, even when a count is 0.
+
+Prompt string: the assignment's example output block does not show an
+input() prompt line the way Task 2's transcript showed "Vessel name: ", so
+no prompt string is a confirmed client contract for Task 3. This plan
+proposes "Call ID: " as a sensible default (matching Task 2's "{Field}: "
+style) but flags it as NOT independently verified against the PDF's own
+transcript the way "Vessel name: " was for Task 2.
+
+================================================================
+3. PROPOSED DESIGN
+================================================================
+
+Module responsibilities use the shared contract for loading, with
+task-specific classification and output behavior:
+
+data_access.py (shared contract):
+- Use `load_port_calls`, `load_manifests`, and `load_shipments`, each
+  returning the shared `LoadResult`. Keep their diagnostics available to
+  the service. Operations select records by internal IDs, not filenames;
+  recoverable record/file errors are diagnosed, while fatal directory and
+  I/O failures propagate.
+
+operations.py:
+- resolve_call(call_id_text, calls) -> dict | None
+    call_id_text.strip().casefold() compared against each
+    call["call_id"].strip().casefold(); returns the first matching call row
+    or None. Task 3 never resolves by vessel name. For duplicate IDs, use
+    the first CSV row retained by the shared loader. Returns None ->
+    caller prints "Port call not found." and returns to menu.
+- classify_shipment(shipment: dict) -> tuple[str, str]   [FIRM, new, owned
+  by Task 3]
+    Pure function, no I/O, no printing. Body is a straight if/elif/elif/else
+    chain matching the rule table's order exactly, so an earlier true
+    condition always wins and later conditions are never evaluated:
+
+      def classify_shipment(shipment):
+          if shipment.get("hazardous", False):
+              return "CONTROLLED", "hazardous cargo"
+          if shipment.get("temperature_controlled", False):
+              return "COLD CHAIN", "temperature controlled"
+          if shipment.get("priority") == "EXPRESS" or shipment.get("weight_kg", 0) >= 5000:
+              return "EXPEDITE", "express service"
+          return "STANDARD", "standard handling"
+
+    Optional-field defaults follow the same absent-or-null-fails-to-default
+    convention established in Task 1/Task 2: hazardous and
+    temperature_controlled default to False (per DATA-DICTIONARY.md);
+    priority and weight_kg are required fields per the data dictionary, so
+    no default is defined for them by the spec, but the .get(...) calls
+    above are defensive against a resolved-but-still-malformed record
+    rather than a KeyError crash — this defensiveness is not a spec
+    requirement, only a robustness choice, and should not silently invent
+    business meaning (a shipment missing weight_kg is not expected to occur
+    for any record that passed the shared shipment loader's required-field check,
+    so this is belt-and-suspenders, not a documented edge case).
+- build_priority_report(manifest, shipment_records) -> dict (or small
+  dataclass) containing: an ordered list of (shipment_id, category, reason)
+  tuples for each RESOLVED shipment_id (in manifest["shipment_ids"] order,
+  unresolved ids simply skipped — no tuple, no line), and a totals dict/
+  ordered structure pre-seeded with all four categories at 0 in table order
+  (CONTROLLED, COLD CHAIN, EXPEDITE, STANDARD) before iterating, so a
+  category with zero matches still exists in the totals structure and is
+  still printed as "=0" rather than being absent from a dict that only ever
+  gained keys it saw. Iterate manifest["shipment_ids"] in order and select
+  the first valid record with each requested internal shipment_id from the
+  shared shipment records; if none exists, continue without a line or count
+  change. For a match, call classify_shipment(record), append the tuple,
+  and increment totals[category]. Pure function over already-loaded data
+  (no printing), consistent with Task 2's
+  build_manifest_report being pure — main.py owns the actual print() calls.
+
+main.py:
+- In the `elif selection == 3:` branch: (1) load the shared call, manifest,
+  and shipment results, retaining recoverable diagnostics for
+  task-appropriate reporting; (2) prompt
+  "Call ID: " (see Section 2 caveat on this exact string not being a
+  confirmed client contract); (3) resolve via operations.resolve_call —
+  on None, print "Port call not found." and return to the outer menu loop;
+  (4) select the first usable manifest matching both call_id and vessel_id
+  from the shared
+  manifest records — if none, print "Manifest unavailable." and return to
+  menu; (5) build the report via
+  operations.build_priority_report and print each
+  "{shipment_id} | {category} | {reason}" line in order, then print the
+  "Category totals: CONTROLLED={n}, COLD CHAIN={n}, EXPEDITE={n},
+  STANDARD={n}" summary line unconditionally (even if the manifest resolved
+  zero shipments, so all four counts print as 0 with no cargo lines above
+  them — see Section 4's empty-manifest case).
+- Recoverable record diagnostics remain available to operations. Fatal
+  source/CSV/schema/I/O failures propagate to an explicit, narrowly scoped
+  service error path; do not collapse them into an unknown call, missing
+  manifest, or empty successful report. Do not use a blanket `except:`.
+
+Category-order guarantee (explicit, restated): totals must be seeded as an
+ordered structure (e.g. a dict built as {"CONTROLLED": 0, "COLD CHAIN": 0,
+"EXPEDITE": 0, "STANDARD": 0} up front, or four named counters) BEFORE the
+classification loop runs, and the summary line must read from that fixed
+order when printing — never derived by iterating "categories seen" (which
+would omit zero-count categories) and never alphabetized or otherwise
+resorted.
+
+================================================================
+4. ACCEPTANCE CRITERIA CHECKLIST
+================================================================
+
+[ ] Known-ID full worked example (matches the assignment's own example
+    output line-for-line): call_id "HFL-AAR-2071" (vessel VSL-003, Skagerrak
+    Star) has manifest shipment_ids ["SHP-1045", "SHP-1046", "SHP-1067"],
+    all three resolve. SHP-1045 (priority EXPRESS, weight 500,
+    hazardous=false, temperature_controlled=false) -> EXPEDITE / "express
+    service". SHP-1046 (hazardous=true) -> CONTROLLED / "hazardous cargo".
+    SHP-1067 (priority EXPRESS, weight 620) -> EXPEDITE / "express service".
+    Output must be exactly:
+      SHP-1045 | EXPEDITE | express service
+      SHP-1046 | CONTROLLED | hazardous cargo
+      SHP-1067 | EXPEDITE | express service
+      Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
+
+[ ] Case-insensitive / whitespace-trimmed call ID: typing "  hfl-aar-2071  "
+    (mixed case, leading/trailing spaces) must resolve to the same call as
+    "HFL-AAR-2071" and produce the identical output above.
+
+[ ] Unknown call: a typed call_id absent from port_calls.csv entirely (e.g.
+    "HFL-ZZZ-9999") prints exactly "Port call not found." and returns to the
+    menu without attempting a manifest lookup.
+
+[ ] Missing manifest (real-data case, no mock needed): call_id
+    "HFL-BAD-9999" is a genuine port_calls.csv row (VSL-003, GOT,
+    "2026-02-30") that has no file anywhere in dataset/manifests. Must
+    resolve the call (it exists in port_calls.csv) but then print exactly
+    "Manifest unavailable." and return to menu. (Note: this call's invalid
+    arrival_date is irrelevant to Task 3, which never reads arrival_date —
+    do not conflate this with Task 2's separate "No upcoming port calls
+    found." handling of the same row.)
+
+[ ] Malformed manifest (mock-only case): a manifest file that parses as
+    JSON but is missing a required key (e.g. no shipment_ids) must also
+    collapse to "Manifest unavailable." — no sample file in the shipped
+    dataset currently exercises this for an otherwise-valid call_id, so it
+    must be exercised via a temporary local test fixture, not by editing
+    the protected dataset/manifests directory.
+
+[ ] Each category triggered alone, real data:
+      - CONTROLLED alone: SHP-1046 (hazardous=true) in HFL-AAR-2071.
+      - COLD CHAIN alone: SHP-1042 (hazardous=false, temperature_controlled
+        =true, priority STANDARD) via call HFL-GOT-2048.
+      - EXPEDITE via priority alone: SHP-1045/SHP-1067/SHP-1048 (priority
+        EXPRESS, weight < 5000).
+      - EXPEDITE via weight alone: SHP-1050 (priority STANDARD, weight_kg
+        5250, hazardous=false, temperature_controlled=false) in manifest
+        HFL-OSL-2090 — confirms the weight_kg >= 5000 sub-condition
+        independently of the EXPRESS sub-condition using real data.
+      - STANDARD alone: SHP-1070 (hazardous=false, temperature_controlled
+        =false, priority STANDARD, weight 2750) is the ONLY shipment in
+        manifest HFL-GOT-2105 — call_id "HFL-GOT-2105" must print exactly:
+          SHP-1070 | STANDARD | standard handling
+          Category totals: CONTROLLED=0, COLD CHAIN=0, EXPEDITE=0, STANDARD=1
+        This is also the concrete proof case that all four categories print
+        even when three of them are zero.
+
+[ ] First-match priority, real data: call_id "HFL-CPH-2017" (manifest
+    shipment_ids ["SHP-1043", "SHP-1044"]). SHP-1043 has BOTH
+    temperature_controlled=true AND priority=EXPRESS — rule order means
+    temperature_controlled (rule 2) is checked and wins BEFORE the
+    EXPRESS/weight rule (rule 3) is ever reached, so it must classify as
+    COLD CHAIN / "temperature controlled", NOT EXPEDITE. SHP-1044
+    (hazardous=false, temperature_controlled=false, priority STANDARD,
+    weight 1500) -> STANDARD / "standard handling". Exact required output:
+      SHP-1043 | COLD CHAIN | temperature controlled
+      SHP-1044 | STANDARD | standard handling
+      Category totals: CONTROLLED=0, COLD CHAIN=1, EXPEDITE=0, STANDARD=1
+    This is the single most important regression test for "first match, not
+    best match" — an implementation that checked EXPRESS before
+    temperature_controlled, or that let a later rule overwrite an earlier
+    one, would incorrectly report SHP-1043 as EXPEDITE.
+
+[ ] First-match priority, synthetic (real data never sets both flags true
+    simultaneously, so this must be verified by a constructed fixture fed
+    directly to classify_shipment): a shipment dict with hazardous=true AND
+    temperature_controlled=true must return ("CONTROLLED", "hazardous
+    cargo") — hazardous (rule 1) wins over temperature_controlled (rule 2).
+
+[ ] Missing shipment inside an otherwise-valid manifest does not crash and
+    is silently skipped (no printed line, not counted in any total, no
+    "MISSING RECORD" text — this differs from Task 2's per-line behavior):
+    call_id "HFL-GOT-2048" has manifest shipment_ids ["SHP-1042",
+    "SHP-1051"]; SHP-1042 resolves (temperature_controlled=true ->
+    COLD CHAIN) and SHP-1051 has no file anywhere in dataset/shipments.
+    Required exact output is ONLY:
+      SHP-1042 | COLD CHAIN | temperature controlled
+      Category totals: CONTROLLED=0, COLD CHAIN=1, EXPEDITE=0, STANDARD=0
+    (no second line for SHP-1051 of any kind).
+
+[ ] Empty/all-unresolved manifest edge case (not present in shipped data;
+    must be verified via a constructed local fixture, not by editing the
+    protected dataset): a manifest whose shipment_ids is an empty list, OR
+    whose every shipment_id fails to resolve, must print zero cargo lines
+    and still print exactly:
+      Category totals: CONTROLLED=0, COLD CHAIN=0, EXPEDITE=0, STANDARD=0
+    without raising and without treating this as "Manifest unavailable."
+    (the manifest itself is structurally valid — the required keys are all
+    present — only its shipment membership resolves to nothing).
+
+[ ] classify_shipment purity: calling classify_shipment(shipment) twice with
+    the same input dict must return the identical (category, reason) tuple
+    both times, and must not mutate the input dict (no key added/removed/
+    changed) — checkable directly via unit test without touching the
+    dataset or any I/O.
+
+[ ] CodeGrade-alternate-data safety: the implementation must not hard-code
+    "HFL-AAR-2071", "SHP-1045", "SHP-1046", "SHP-1067", or any other sample
+    identifier/value anywhere in the code path (including inside
+    classify_shipment's category/reason string LITERALS, which are policy
+    constants, not sample data, and are therefore fine to hard-code); all
+    resolution must be derived purely from parsing port_calls.csv,
+    dataset/manifests, and dataset/shipments at runtime, and from the user's
+    typed call ID, per START-HERE.txt rule 7.
+
+[ ] Corresponds in spirit to test-ledger.csv's "Relationships" row structure
+    (known ID / missing link / unknown identifier), even though that row's
+    literal text is already claimed by Task 2's own acceptance evidence —
+    updating test-ledger.csv itself, or adding a Task-3-specific row, is out
+    of scope for this planning task.
+
+================================================================
+5. SHARED INTERFACE CONTRACT
+================================================================
+
+INTEGRATED-CONTRACT-PLAN.md is canonical for root paths, `LoadResult`
+shapes, validation, diagnostics, and fatal errors. Task 3 selects its call
+from shared port-call records, selects the first usable matching manifest
+by call_id and vessel_id, and resolves shipment IDs from the shared
+shipment records in manifest order. Recoverable missing shipment references
+remain silently omitted from Task 3's cargo lines and category totals, as
+required by this task; fatal loader errors remain explicit.
+
+================================================================
+7. INTEGRATION CONTRACT UPDATE
+================================================================
+
+INTEGRATED-CONTRACT-PLAN.md is canonical for call/manifest selection and
+recovery. Resolve a trimmed, case-insensitive call ID against port_calls.csv;
+select the first usable matching manifest in sorted source-path order,
+requiring its vessel_id to match the call; retain loader diagnostics. If
+none is usable, preserve "Manifest unavailable.". Empty shipment_ids and
+event_codes lists are valid. Preserve manifest order and omit unresolved
+shipment references from Task 3 output/totals as specified; surface fatal
+source-loading errors explicitly. Task 7 uses the same call and manifest
+selection policy. For the single EXPEDITE rule, use the demonstrated
+"express service" reason whether triggered by EXPRESS priority or
+weight_kg >= 5000. This weight-only reason is a project assumption, not a
+separately mandated phrase, supported by the single rule/example.

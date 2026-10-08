@@ -1,0 +1,56 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 3: IDENTIFY PRIORITY CARGO
+
+Business outcome
+Turn raw shipment attributes into a documented operational decision.
+
+Goal
+For one port call, resolve the manifest's shipments and classify each resolved
+shipment using the first matching business rule. Preserve manifest order.
+
+Interaction and record selection
+- Ask for a call ID, strip surrounding spaces, and match case-insensitively.
+- If the call is unknown, print exactly: Port call not found.
+- If its manifest is missing or malformed, print exactly:
+  Manifest unavailable.
+- In either error case, return to the menu.
+- Resolve shipments using their shipment_id fields and print only resolved
+  shipment records in manifest order.
+
+Classification policy
+Apply the first matching rule; do not reorder these conditions:
+1. hazardous is true -> CONTROLLED
+2. temperature_controlled is true -> COLD CHAIN
+3. priority is EXPRESS or weight_kg >= 5000 -> EXPEDITE
+4. otherwise -> STANDARD
+
+Make classification a pure helper: it receives one shipment dictionary and
+returns both the category and a reason that identifies the matching rule. The
+PDF example uses these reason labels:
+- express service
+- hazardous cargo
+The PDF does not prescribe exact wording for every other reason; do not
+present invented wording as a client-mandated string.
+
+Output and summary
+- Print shipment ID, category and reason for each resolved shipment.
+- Then print category totals in this exact order:
+  CONTROLLED, COLD CHAIN, EXPEDITE, STANDARD
+- Keep the category spelling and spacing exact.
+
+Example
+SHP-1045 | EXPEDITE | express service
+SHP-1046 | CONTROLLED | hazardous cargo
+SHP-1067 | EXPEDITE | express service
+Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
+
+Acceptance checks
+[ ] Call lookup strips surrounding spaces and ignores case.
+[ ] Unknown call and unavailable manifest print the exact message and return
+    to the menu.
+[ ] Classification follows the ordered rules; a shipment matching multiple
+    rules receives only the first rule's category.
+[ ] Classification is a pure function of one shipment record.
+[ ] Unresolved shipments are not classified as if they were shipment records.
+[ ] Per-shipment output follows manifest order.
+[ ] Totals include zero-count categories and use the required order.

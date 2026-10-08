@@ -1,0 +1,89 @@
+import json
+from pathlib import Path
+
+v01_required_fields = ("vessel_id","name","imo","capacity_teu")
+v02_vessels_directory = Path(__file__).resolve().parents[2] / "data" / "dataset" / "vessels"
+
+def load_jsosn(path):
+    with Path(path).open("r", encoding="utf-8") as json_file:
+        v03_record = json.load(json_file)
+        if not isinstance(v03_record, dict):
+            raise ValueError("record must be JSON file")
+        return v03_record
+
+def load_vessels(directory):
+    directory = Path(directory)
+    if not directory.is_dir():
+        raise FileNotFoundError(f"Vesssels Data directory not fount")
+    s04_vessels = []
+    s05_rejected_files = []
+    for path in sorted(directory.glob("*.json"), key=lambda item: item.name.casefold()):
+        try :
+            v06_vessel = load_jsosn(path)
+        except FileNotFoundError as error:
+            s05_rejected_files.append(f"{path.name}: {error}")
+            continue
+        except json.JSONDecodeError as error:
+            s05_rejected_files.append(
+                f"{path.name}: malform JSON at line {error.lineno}, "
+                f"column {error.colno}")
+            continue
+        except ValueError as error:
+            s05_rejected_files.append(f"{path.name}: {error}")
+            continue
+        s07_missing_field = []
+        for field in v01_required_fields:
+            if field not in v06_vessel:
+                s07_missing_field.append(field)
+        if s07_missing_field:
+            s05_rejected_files.append(
+                f"{path.name}: missingg required fields: {', '.join(s07_missing_field)}")
+            continue
+
+        s08_invalid_fields = []
+        if not isinstance(v06_vessel["vessel_id"], str):
+            s08_invalid_fields.append("vessel_id must be a string")
+        if not isinstance(v06_vessel["name"], str):
+            s08_invalid_fields.append("name must be string")
+        if not isinstance(v06_vessel["imo"], str):
+            s08_invalid_fields.append("imo mus be string")
+        if not isinstance(v06_vessel["capacity_teu"], int) or isinstance(v06_vessel["capacity_teu"], bool):
+            s08_invalid_fields.append("capasity_teu must be an integr")
+        if s08_invalid_fields:
+            s05_rejected_files.append(f"{path.name}: {'; '.join(s08_invalid_fields)}")
+            continue
+        s04_vessels.append(v06_vessel)
+    s04_vessels.sort(key=lambda vessel: vessel["name"].casefold())
+    return s04_vessels, s05_rejected_files
+
+def print_inventory(vesels, rejected_files):
+    print("Registerd HarborFlow vessels:")
+    name_width = max((len(vessel["name"]) for vessel in vesels), default=0)
+    imo_width = max((len(vessel["imo"]) for vessel in vesels), default=0)
+    capacity_width = max(
+        (len(f"{vessel['capacity_teu']:,}") for vessel in vesels), default=0
+    )
+    for vessel in vesels:
+        capacity = f"{vessel['capacity_teu']:,}"
+        print(
+            f"- {vessel['name']:<{name_width}} | IMO "
+            f"{vessel['imo']:<{imo_width}} | {capacity:>{capacity_width}} TEU"
+        )
+    for rejection in rejected_files:
+        print(f"Skipped {rejection}")
+    print(f"Skipped vessel files: {len(rejected_files)}")
+
+def main():
+    try:
+        vessels, rejected_files = load_vessels(v02_vessels_directory)
+    except FileNotFoundError as error:
+        print(f"Error - {error}")
+        return
+    print_inventory(vessels, rejected_files)
+
+if __name__ == "__main__":
+    main()
+
+
+
+

@@ -1,0 +1,56 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 6: SANITIZE AN INCIDENT REPORT
+
+Business outcome
+Protect commercially sensitive identifiers before a report is shared with an
+external partner.
+
+Goal
+Let the user select an incident report and replace every container ID, seal
+number and email address with the prescribed placeholder, preserving all other
+report text, punctuation and line breaks.
+
+Selection flow
+1. Display incident titles sorted without regard to case, numbered from 1.
+2. Ask for the list number.
+3. For invalid input, print exactly:
+   Error - Select a listed incident.
+   Repeat only the incident-number prompt.
+4. Read the selected incident's incident_id and report fields.
+
+Redaction rules
+Use re.sub() for each of these three transformations:
+- Container identifier: four letters followed by seven digits; match the
+  letters case-insensitively. Replace with [CONTAINER].
+- Seal number: SEAL- followed by six digits; match the SEAL prefix
+  case-insensitively. Replace with [SEAL].
+- Email address: letters, digits or ._%+- before @; a domain containing
+  letters, digits, dots or hyphens; and a final dot followed by at least two
+  letters. Replace with [EMAIL].
+
+Example
+Input:
+Container MSCU1234567 arrived with seal SEAL-884210. Notify ops@harborflow.se.
+
+Output:
+[CONTAINER] arrived with seal [SEAL]. Notify [EMAIL].
+
+Output behavior
+- A report is changed if at least one substitution occurs.
+- If changed, save the redacted report to:
+  exports/sanitized/<incident_id>-sanitized.txt
+- Create exports/sanitized/ when necessary.
+- If no substitutions occur, do not create an output file and print exactly:
+  Incident contains no share-sensitive identifiers.
+- Preserve every other character and every line break.
+
+Acceptance checks
+[ ] Incident titles are case-insensitively sorted and numbered from 1.
+[ ] Invalid selection prints the exact error and repeats only that prompt.
+[ ] Each identifier type is redacted when it appears alone.
+[ ] Mixed identifiers in one report are all replaced.
+[ ] Container letters and SEAL prefix matching are case-insensitive.
+[ ] Email matching follows the allowed character groups and final-domain rule.
+[ ] All non-sensitive text, punctuation and line breaks remain unchanged.
+[ ] Changed output uses the exact path and creates the directory if needed.
+[ ] An unchanged report prints the exact message and creates no file.

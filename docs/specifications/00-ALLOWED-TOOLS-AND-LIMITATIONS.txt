@@ -1,0 +1,65 @@
+HARBORFLOW PORT INTELLIGENCE CONSOLE
+ASSIGNMENT 2: ALLOWED TOOLS AND LIMITATIONS
+
+Use this guide with the Task 0-9 briefs. The Assignment 2 PDF is authoritative
+if any summary here differs from the assignment.
+
+Allowed technical scope
+[ ] Python standard library, including json, csv, re, pathlib and datetime.
+[ ] Dictionaries and lists to model records and relationships.
+[ ] File input/output needed to read the supplied JSON/CSV dataset and create
+    required persistent outputs.
+[ ] Regular expressions for incident sanitization and text normalization.
+[ ] Functions, loops, conditionals, exception handling and other standard
+    Python language features appropriate to the requirements.
+[ ] Additional standard-library modules when genuinely useful and within the
+    assignment requirements.
+
+Not allowed or restricted
+[ ] Third-party packages such as pandas.
+[ ] Hard-coding the supplied sample records; CodeGrade may use other data.
+[ ] Machine-specific absolute paths. Use paths that work from the project root.
+[ ] Repairing or deleting intentional malformed or missing dataset records.
+[ ] Modifying the supplied source dataset, except Task 9 may create or refresh
+    dataset/incident-index.json.
+[ ] Blanket except clauses that hide programming errors. Catch
+    FileNotFoundError, json.JSONDecodeError, csv.Error and ValueError only at
+    boundaries where a useful response can be given.
+[ ] Using exit() or break to close the console. Use a loop-state variable and
+    close normally only through menu option 10.
+
+Important difference from Assignment 1
+Do not carry the older Assignment 1 tool bans into this project. Assignment 2
+requires JSON/CSV file handling, dictionaries and regular expressions for its
+specified tasks. The Assignment 1 restrictions against these tools, sets and
+list comprehensions are not Assignment 2 restrictions.
+
+Dataset and output boundaries
+- Preserve the supplied directory structure and run with: python main.py
+- Read source data under dataset/ and join records through their identifiers.
+- Leave intentional malformed and missing records unchanged; report and skip
+  or handle them according to the relevant task.
+- Task 9's cache is dataset/incident-index.json. Other generated persistent
+  product outputs belong under exports/.
+- Generated CSV and JSON must remain valid and be loadable on later runs.
+
+Interface and product limitations
+- The console starts from main.py, returns after each service, and closes only
+  through option 10.
+- Preserve required prompts, punctuation, capitalization, ordering, filenames
+  and output formats exactly.
+- Handle expected input and data errors without crashing or hiding programming
+  defects. Return safely to the menu after recoverable errors.
+- Keep file access, user interaction and business logic separated enough to
+  test and explain; the suggested module boundaries may be adapted.
+
+Submission and evidence
+- Submit as one CodeGrade group of exactly 3-4 students.
+- Include main.py and every imported Python module, readme.txt and
+  test-ledger.csv.
+- The readme must identify members, concrete contributions, architecture, run
+  instructions and known limitations.
+- Record normal, boundary, missing-data and malformed-data evidence in the
+  test ledger.
+- Do not submit altered copies of the supplied dataset unless CodeGrade asks.
+- Each group member must be able to explain the integrated product.

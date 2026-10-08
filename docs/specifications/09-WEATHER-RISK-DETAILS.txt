@@ -1,0 +1,59 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 8: ASSESS WEATHER RISK FOR UPCOMING CALLS
+
+Business outcome
+Join schedules and forecasts so a planner can decide whether extra controls
+are needed.
+
+Goal
+For a selected vessel and reference date, show each valid upcoming port call
+with its matching forecast and every recommendation whose condition is true.
+
+Input and call selection
+- Ask for a vessel name, strip surrounding spaces, and match case-insensitively.
+- For an unknown vessel, print exactly: Vessel not found. Then return to the
+  menu.
+- Ask for a reference date in YYYY-MM-DD format. If invalid, print exactly:
+  Error - Date must use YYYY-MM-DD.
+  Repeat only the date prompt.
+- An upcoming call has an arrival_date on or after the reference date.
+- Report and skip a port-call row with an invalid date; continue checking later
+  valid rows.
+- If there are no valid upcoming calls for the vessel, print exactly:
+  No upcoming port calls found.
+
+Forecast matching and order
+- Read port_calls.csv and weather.csv.
+- Match a forecast by both port_code and arrival_date.
+- Print qualifying calls chronologically, using call_id as the tie-breaker.
+- A missing forecast prints exactly: Forecast unavailable. Continue with later
+  calls.
+- Convert wind_kmh, precipitation_mm and wave_height_m in a focused try block.
+  Report and skip malformed forecast rows without stopping later calls.
+
+Apply recommendations in this exact order
+1. wind_kmh >= 45: Suspend crane operations.
+2. wave_height_m >= 2.5: Arrange tug assistance.
+3. precipitation_mm >= 8 and wind_kmh < 45: Prepare covered handling.
+4. If all three values are below their thresholds: Normal operating plan.
+
+Recommendations are cumulative; print every applicable recommendation in the
+table order above.
+
+Example
+Nordic Relay | GOT | 18 October 2026
+Wind: 48.0 km/h | Rain: 3.2 mm | Waves: 2.7 m
+Recommendation: Suspend crane operations. Arrange tug assistance.
+
+Acceptance checks
+[ ] Vessel lookup trims spaces and ignores case.
+[ ] Invalid input date repeats only the date prompt with the exact error.
+[ ] Calls on the reference date qualify; earlier calls do not.
+[ ] Invalid call dates and malformed forecast numbers are reported/skipped;
+    later valid calls still appear.
+[ ] Forecast matching uses both port_code and date.
+[ ] Calls sort chronologically with call_id as tie-breaker.
+[ ] Every weather threshold is tested individually and in combination.
+[ ] Recommendation order is stable when multiple conditions are true.
+[ ] Missing forecast prints the exact message and does not stop later calls.
+[ ] Unknown vessel and no upcoming calls print the exact message.

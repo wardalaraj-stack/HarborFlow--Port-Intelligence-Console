@@ -1,0 +1,373 @@
+TASK 8 PLAN — HarborFlow Port Intelligence Console: Assess Weather Risk
+for Upcoming Calls
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-28
+
+================================================================
+1. SCOPE AND EVIDENCE
+================================================================
+
+Scope is Task 8 only — “Assess weather risk for upcoming calls” (menu
+option 8). This is a planning document, not an implementation. File-scope
+statements in this section describe the original Task 8 drafting pass. The
+coordinated revision edits planning documents only; it does not modify
+application code, source data, test-ledger.csv, or readme.txt. No project
+commands, tests, or builds were run.
+
+Authoritative scope source: C:\Users\conda\Downloads\DIT014 HT26
+Assignment 2 - HarborFlow Port Intelligence Console.pdf, Task 8 on PDF
+page 8. The requirement and demonstrated output are transcribed in
+Section 2. Page 10’s suggested architecture is used only to inform module
+placement, not to expand the feature’s behavior.
+
+Read-only supporting evidence:
+- START-HERE.txt: keep the directory layout, read dataset files with
+  relative paths, keep supplied dataset files read-only, do not hard-code
+  supplied records, and place persistent program outputs under exports/.
+- dataset\DATA-DICTIONARY.md: port_calls.csv links calls to vessels, ports,
+  and forecasts; weather.csv matches by both port_code and date; dates are
+  ISO strings and CSV numeric fields must be converted by the program.
+- dataset\port_calls.csv: six supplied calls, including Nordic Relay’s
+  2026-10-18 and 2026-11-05-related calls, Baltic Pioneer’s 2026-10-02
+  and 2026-11-12 calls, Skagerrak Star’s 2026-10-18 call, and the
+  intentionally invalid 2026-02-30 call HFL-BAD-9999.
+- dataset\weather.csv: matching forecasts for CPH 2026-10-02, GOT
+  2026-10-18, AAR 2026-10-18, and OSL 2026-11-05; the CPH 2026-12-01
+  row has the intentional non-numeric wind value “not-recorded”.
+- dataset\vessels\baltic-pioneer.json, nordic-relay.json,
+  skagerrak-star.json, and damaged-record.json: the three valid vessel
+  names/IDs needed for joins plus the deliberately malformed vessel
+  fixture. Task 8 must use the shared vessel loader rather than hard-code
+  these records.
+- test-ledger.csv: the Weather / Combined thresholds row specifies
+  Nordic Relay from 2026-10-18 and expects combined wind and wave
+  recommendations; the Weather / Missing forecast row specifies Baltic
+  Pioneer from 2026-11-05 and expects forecast unavailability without
+  stopping. Both statuses are Not run and remain planned evidence only.
+- TASK-0-PLAN.txt through TASK-7-PLAN.txt: read-only neighboring-plan
+  context, console behavior, shared loader contracts, date handling, and
+  established plan structure.
+
+Review is optional internal workflow, not an assignment requirement or
+implementation gate. The integrated contract and this plan's Section 7
+state the current resolved policies; no test execution or approval is
+claimed.
+
+================================================================
+2. TASK 8 REQUIREMENT SUMMARY (from the assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Join schedules and forecasts so a planner can decide
+whether extra controls are needed.
+
+Exact Task 8 requirement text:
+
+Read port_calls.csv and weather.csv. Ask for a vessel and a reference date
+in YYYY-MM-DD format. Remove surrounding spaces from the vessel name and
+match it case-insensitively. An upcoming call is one whose arrival_date is
+on or after that date. Match each qualifying call by port_code and
+arrival_date. Print forecasts chronologically, using call_id as the
+tie-breaker, and apply every recommendation whose condition is true.
+
+- If the vessel is unknown, print exactly “Vessel not found.” and return
+  to the menu.
+- If the date is invalid, print exactly “Error - Date must use
+  YYYY-MM-DD.” and repeat only the date prompt.
+- Report and skip an invalid port-call date without stopping later valid
+  calls.
+- If no valid upcoming calls exist, print exactly “No upcoming port calls
+  found.”
+- Convert numeric CSV fields inside a focused try block and report
+  malformed forecast rows.
+- A missing forecast prints exactly “Forecast unavailable” and does not
+  stop later calls.
+
+Recommendation rules, evaluated for every matched forecast and printed in
+the following table order:
+
+  wind_kmh >= 45                              Suspend crane operations.
+  wave_height_m >= 2.5                       Arrange tug assistance.
+  precipitation_mm >= 8 and wind_kmh < 45    Prepare covered handling.
+  all three values below thresholds            Normal operating plan.
+
+The demonstrated successful output is:
+
+  Nordic Relay | GOT | 18 October 2026
+  Wind: 48.0 km/h | Rain: 3.2 mm | Waves: 2.7 m
+  Recommendation: Suspend crane operations. Arrange tug assistance.
+
+Recommendations can be combined and must appear in table order. The PDF
+does not prescribe the vessel prompt, date prompt, an output heading for
+multiple calls, the exact diagnostic wording for invalid source rows or
+malformed forecast rows, or whether a call with a malformed matching
+forecast is reported in a particular layout. Those are integration
+decisions, not invented literal requirements.
+
+================================================================
+3. PROPOSED DESIGN AND MODULE RESPONSIBILITIES
+================================================================
+
+Use the shared loading, root-path, and error contracts in
+INTEGRATED-CONTRACT-PLAN.md while preserving Task 8’s explicit requirements.
+Task-specific helper names below are descriptive implementation proposals.
+
+data_access.py:
+- Reuse the shared vessel loader from Task 1 and the shared raw
+  port_calls.csv loader from Task 2/5. The call loader must retain
+  call_id, vessel_id, port_code, and source arrival_date text so Task 8
+  can validate each row independently and report/skip one bad date
+  without discarding later valid rows.
+- Reuse the shared `load_weather(path) -> LoadResult[WeatherRow]` loader to
+  retain port_code, date, all three numeric source strings, and row context.
+  In the operation, convert all three fields in one focused per-row block
+  and require finite numeric values. Diagnose and skip a row with malformed
+  or non-finite numeric data; do not use sentinels or abort later forecasts.
+- Keep source paths relative to the project root, such as
+  dataset/port_calls.csv and dataset/weather.csv. Do not modify or repair
+  either source file. Do not make Task 8 depend on generated exports.
+- Use the shared loader interfaces without adding a second CSV parser.
+  Keep source date text available until the operation layer applies this
+  task's per-row date policy.
+
+operations.py:
+- Provide a pure vessel selection helper such as
+  find_vessel_by_name(records, entered_name), which strips surrounding
+  whitespace from the input and compares names case-insensitively. The
+  caller must distinguish “no match” from a loader failure so the exact
+  “Vessel not found.” path remains clear.
+- Provide a date parser/validator for the reference date that requires a
+  real calendar date in YYYY-MM-DD form. It should reject malformed,
+  impossible, or otherwise non-ISO dates and let main.py emit exactly
+  “Error - Date must use YYYY-MM-DD.”. The selected reference date is
+  parsed once; do not compare arbitrary source strings lexically.
+- Provide a pure operation such as
+  collect_weather_risk(vessel, reference_date, call_rows, forecasts) that:
+    1. parses each call’s arrival_date as a real date;
+    2. reports and excludes invalid call dates;
+    3. keeps rows whose vessel_id is the selected vessel and whose
+       arrival_date is on or after the reference date;
+    4. looks up a forecast by the exact pair (port_code, arrival_date);
+    5. marks a qualifying call as forecast-unavailable when no valid
+       forecast exists; and
+    6. sorts qualifying calls chronologically by arrival_date and then
+       call_id.
+  The returned result should retain call and forecast data separately from
+  diagnostics so missing forecasts do not suppress later calls.
+- Apply all true recommendation predicates independently. The normal
+  recommendation is selected only when wind, wave, and precipitation are
+  all below their thresholds; it must not be added alongside a warning.
+  When warning predicates overlap, preserve the PDF’s table order:
+  crane, tug, then covered handling.
+- Keep filtering, joining, threshold evaluation, and sorting independent
+  of printing and filesystem I/O. This makes exact threshold, tie, missing
+  forecast, and malformed-row cases testable with in-memory fixtures.
+
+text_tools.py:
+- Use the shared focused formatter for the project date display
+  “D Month YYYY” (no leading zero on a single-digit day), forecast values,
+  and recommendation lines. Task 5 keeps its separate demonstrated
+  zero-padded date format. Do not duplicate date formatting logic.
+- Keep recommendation selection in one pure helper if that matches the
+  existing architecture; do not duplicate threshold comparisons in the
+  menu branch. The helper should return ordered recommendation labels, not
+  print them, and should preserve numeric values for the forecast line.
+
+main.py:
+- In the selection == 8 branch, ask for a vessel using a consistent
+  project prompt, then normalize only the entered vessel name by trimming
+  surrounding whitespace and performing a case-insensitive match.
+- If no vessel matches, print exactly “Vessel not found.” and return to
+  the outer menu without asking for the date.
+- Ask for the reference date using a consistent project prompt. On every
+  invalid date, print exactly “Error - Date must use YYYY-MM-DD.” and
+  repeat only the date prompt; do not redisplay the menu or re-ask the
+  vessel. A valid date proceeds to data loading and analysis.
+- Load calls, weather rows, and valid vessels through shared data-access
+  functions. Print row-level diagnostics for invalid call dates and
+  malformed weather numeric rows using the agreed integration wording.
+  Such diagnostics must not stop later valid calls.
+- For each selected-vessel call on or after the reference date, print the
+  forecast report in chronological/call_id order. A missing forecast must
+  print “Forecast unavailable” for that call and continue. Matched
+  forecasts print the three-line shape demonstrated by the PDF, with
+  every true recommendation on one Recommendation line in table order.
+- If there are no valid upcoming calls for the selected vessel after
+  invalid rows are skipped, print exactly “No upcoming port calls found.”
+  Return to the existing menu and leave options 0–7 and 9–10 unchanged.
+- Catch only the specific file, CSV, JSON, and input errors for which the
+  shared console has a useful recovery. Do not add a blanket exception or
+  silently turn a loader failure into an empty successful report.
+
+================================================================
+4. DATA-GROUNDED ACCEPTANCE CASES (planned, not run)
+================================================================
+
+[ ] Exact combined-threshold example and ledger mapping: select
+    “Nordic Relay” (VSL-002) and reference date 2026-10-18. The
+    HFL-GOT-2048 call qualifies, matches GOT / 2026-10-18, and uses
+    wind 48.0, rain 3.2, waves 2.7. The output must include:
+      Nordic Relay | GOT | 18 October 2026
+      Wind: 48.0 km/h | Rain: 3.2 mm | Waves: 2.7 m
+      Recommendation: Suspend crane operations. Arrange tug assistance.
+    “Prepare covered handling.” must not appear because precipitation is
+    below 8, and the normal plan must not appear because warning
+    predicates are true. This is the Weather / Combined thresholds ledger
+    case; its status remains Not run.
+
+[ ] Multiple upcoming calls and chronological order: select Nordic Relay
+    with reference date 2026-10-01. HFL-GOT-2048 on 2026-10-18 and
+    HFL-OSL-2090 on 2026-11-05 both qualify and should print in date order.
+    GOT receives crane and tug recommendations. OSL has wind 44.0,
+    precipitation 1.0, and waves 2.5, so it receives only “Arrange tug
+    assistance.”. This proves later calls are not suppressed by an earlier
+    warning and that the wave comparison is inclusive.
+
+[ ] Missing forecast and ledger mapping: select “Baltic Pioneer”
+    (VSL-001) with reference date 2026-11-05. HFL-GOT-2105 on
+    2026-11-12 is upcoming but has no matching weather row, so the call is
+    retained in sorted output and prints exactly “Forecast unavailable”.
+    The earlier CPH 2026-10-02 call is excluded by the reference date.
+    This is the Weather / Missing forecast ledger case; its status remains
+    Not run. No missing forecast may terminate the service.
+
+[ ] All-below-threshold normal plan: select “Baltic Pioneer” with
+    reference date 2026-10-02. HFL-CPH-2017 matches CPH / 2026-10-02
+    with wind 18.0, rain 2.0, and waves 0.8. The forecast line must
+    preserve those numeric values and the only recommendation must be
+    “Recommendation: Normal operating plan.”.
+
+[ ] Covered-handling condition and strict wind boundary: use an isolated
+    in-memory forecast with precipitation 8.0, wind 44.0, and waves below
+    2.5. The result must include “Prepare covered handling.”. A forecast
+    with wind exactly 45.0 must instead include “Suspend crane
+    operations.” and must not include covered handling, even when rain is
+    at least 8. This checks both inclusive threshold and the strict
+    wind < 45 condition.
+
+[ ] Vessel normalization and unknown vessel: input “  nordic relay  ”
+    and verify it selects Nordic Relay case-insensitively after trimming.
+    Input a name absent from the valid vessel records and verify exactly
+    “Vessel not found.” followed by return to the menu, without a date
+    prompt or file-processing report.
+
+[ ] Reference-date validation and retry scope: try non-ISO text,
+    impossible dates such as 2026-02-30, and wrong-shape dates. Each must
+    print exactly “Error - Date must use YYYY-MM-DD.” and repeat only the
+    date prompt. A valid date then proceeds normally; the vessel prompt is
+    not repeated.
+
+[ ] Invalid source call date: use reference date 2026-01-01 and select
+    Skagerrak Star. HFL-BAD-9999 has an impossible source date
+    2026-02-30 and must be reported and skipped, while the valid
+    HFL-AAR-2071 call on 2026-10-18 remains eligible and is still
+    processed. The invalid row must not crash or block later calls. Use
+    the stable project diagnostic convention in
+    INTEGRATED-CONTRACT-PLAN.md §3 and Section 7; the PDF does not mandate
+    exact wording.
+
+[ ] Forecast matching key: use an isolated fixture with the same date at
+    two ports and verify that only the forecast whose port_code and date
+    both match the call is used. A date-only or port-only join is
+    incorrect. Use call_id as the second sort key for two qualifying calls
+    with the same arrival date; do not rely on CSV enumeration order.
+
+[ ] Malformed forecast numeric row: exercise a weather row containing
+    “not-recorded” (the supplied CPH 2026-12-01 row) through the focused
+    numeric-conversion path and verify it is reported and skipped rather
+    than converted or causing a crash. Because the supplied malformed row
+    has no matching supplied call, add no dataset changes; use an isolated
+    call/forecast fixture if an end-to-end matching case is needed.
+
+[ ] Non-finite forecast values: values such as “NaN” and “inf” may be
+    accepted by float() but are not usable forecasts; diagnose and skip
+    those rows through the same per-row path, without stopping later calls.
+
+[ ] No valid upcoming calls: choose a valid vessel and a reference date
+    after all of its valid calls, or use a fixture containing only invalid
+    call dates. After invalid rows/diagnostics are handled, print exactly
+    “No upcoming port calls found.” and do not print a fabricated forecast.
+
+[ ] Runtime data and console integration: read records at runtime rather
+    than embedding the supplied names, dates, IDs, thresholds, or expected
+    recommendation strings as data. Option 8 must be reachable from the
+    existing menu, return after completion, preserve option 10 closure,
+    and leave source files and test-ledger.csv unchanged.
+
+================================================================
+5. SHARED-INTERFACE AND REUSE RISKS
+================================================================
+
+- Reuse the canonical `load_port_calls(path) -> LoadResult[PortCall]`
+  contract in INTEGRATED-CONTRACT-PLAN.md, which retains raw arrival_date
+  text. Earlier provisional interface language is superseded; do not
+  create a second CSV parsing path that handles invalid dates differently
+  from Task 5.
+- Task 8 needs both valid vessel records and a vessel-name lookup. Reuse
+  `load_vessels(directory)` and its `LoadResult` from
+  INTEGRATED-CONTRACT-PLAN.md; malformed vessel files produce diagnostics
+  without preventing valid VSL-001, VSL-002, and VSL-003 records from being
+  used.
+- Weather numeric conversion is distinct from date parsing. Keep
+  conversion in a narrow try block as required by the PDF, require finite
+  numbers, report the affected row, and skip only that forecast. Do not use broad exception
+  handling that hides missing files, malformed CSV structure, or coding
+  defects.
+- The call/forecast join key is the pair (port_code, arrival_date), not
+  vessel_id, call_id, or date alone. Call sorting is arrival_date then
+  call_id; recommendation ordering is the separate rule-table order.
+- Share the non-zero-padded `D Month YYYY` display formatter with Task 2.
+  Task 5 retains its separately mandated zero-padded `DD Month YYYY`
+  output; all tasks may share strict date parsing without sharing display
+  rules that conflict.
+- The assignment defines “upcoming” against the user’s reference date,
+  with arrival_date on or after it. Do not impose a current-date filter,
+  a year-only filter, or a forecast-availability filter before printing
+  the call.
+- Missing forecasts and malformed forecasts are different states:
+  missing means no matching valid row and requires “Forecast unavailable”;
+  malformed means a source row was reported/skipped. Do not conflate
+  either state with a normal operating plan.
+- A qualifying call may have no usable forecast and still belongs in the
+  chronological report. Ensure the result model can represent that
+  explicitly rather than dropping the call during dictionary lookup.
+
+================================================================
+6. POLICIES RESOLVED BY THE COORDINATED REVISION
+================================================================
+
+The project layout, diagnostics, duplicate forecast policy, call ordering,
+numeric precision, multi-call blocks, and warning/normal recommendation
+behavior are fixed in Section 7 and INTEGRATED-CONTRACT-PLAN.md. Vessel and
+date prompt wording may follow the established console style; it is not
+presented as PDF-mandated. CSV header/schema and file I/O errors propagate
+explicitly; a malformed or non-finite numeric weather row is diagnosed and
+skipped. Review is optional internal workflow, not a requirement or gate.
+
+End of the original Task 8 planning draft. The coordinated revision changes
+plan documents only; it does not implement code or run project commands,
+tests, or builds.
+
+================================================================
+7. INTEGRATION POLICY RESOLUTION
+================================================================
+
+Use the shared project-root and loader contracts in
+INTEGRATED-CONTRACT-PLAN.md. Keep source arrival-date strings available to
+the operation and report a bad call date before checking its vessel ID;
+continue after the row-level diagnostic. Convert all three weather numbers
+inside a focused row-level try block and reject non-finite values. If two
+valid weather rows share
+(port_code, date), the first in CSV source order wins and each later
+duplicate is diagnosed and ignored. A malformed row is skipped; a call with
+no remaining valid matching forecast still prints the exact mandated
+"Forecast unavailable" line.
+
+Sort calls by arrival date and call_id. Print each qualifying call as its
+own report block in sorted order, with one blank line between blocks and no
+extra heading. Format wind, precipitation, and wave values to one decimal
+place as in the worked example. Apply all matching warning recommendations
+in table order; print the normal plan only when none of the warning
+conditions is true. Keep the exact mandated date error, unknown-vessel,
+no-upcoming-calls, forecast-unavailable, and recommendation strings. These
+layout, precision, and duplicate-row rules are project policies where the
+PDF is silent.

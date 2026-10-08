@@ -1,0 +1,39 @@
+HARBORFLOW PORT INTELLIGENCE
+TASK 7: ANALYZE THE LONGEST STABLE EVENT SEQUENCE
+
+Business outcome
+Find the longest uninterrupted stretch of distinct operational events in a
+vessel journey.
+
+Goal
+For a selected call, inspect its manifest event_codes list in chronological
+order and find the longest contiguous sequence with no repeated event code.
+
+Algorithm requirements
+- Implement the sliding-window logic yourself; do not use a third-party
+  library.
+- Track the start of the active window and each event's most recent position.
+- When an event repeats inside the active window, move the start just after
+  that event's previous position. Do not restart blindly at the repeated code.
+- Track the best sequence as the list is scanned.
+- If multiple sequences share the maximum length, keep the first one.
+- Print both the maximum length and the event codes in their original order.
+
+Example
+Event codes: GATE_IN,SCAN,WEIGH,SCAN,LOAD,SEAL,DEPART
+Longest stable sequence length: 5
+Sequence: WEIGH -> SCAN -> LOAD -> SEAL -> DEPART
+
+Selection and errors
+The PDF requires analysis for a selected call but does not prescribe the exact
+selection prompt or exact messages for unavailable manifests. Use a clear call
+selection consistent with the integrated menu and handle missing/unreadable
+records under the shared error policy; do not invent PDF-mandated strings.
+
+Acceptance checks
+[ ] All-unique input returns the full list.
+[ ] An immediate repeat moves the window beyond the previous occurrence.
+[ ] A repeated event outside the active window does not shrink the window.
+[ ] Equal-length maximum sequences preserve the earliest one.
+[ ] Output sequence is contiguous and contains no repeated event code.
+[ ] Empty or short sequences do not crash and produce a correct length/content.

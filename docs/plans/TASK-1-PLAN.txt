@@ -1,0 +1,275 @@
+TASK 1 PLAN — HarborFlow Port Intelligence Console: List Registered Vessels
+Target project: C:\Users\conda\Desktop\Assignment 2
+Date: 2026-09-27
+
+================================================================
+1. SCOPE AND PLANNING EVIDENCE
+================================================================
+
+Scope and evidence (no approval claimed):
+This plan covers Task 1 only — "List registered vessels" (menu option 1). It
+proposes no application code changes; main.py, data_access.py,
+operations.py, and text_tools.py were opened strictly read-only for
+inspection of existing structure/docstrings, and none were modified. It
+imports no "Assignment 1" content and makes no reference to any other
+assignment or unrelated codebase. It does not propose touching any
+protected file: dataset/vessels/*.json (including the intentionally
+malformed record) were read-only for evidence, test-ledger.csv and
+readme.txt were read-only for context, and START-HERE.txt was read-only for
+rules. This plan records expected behavior; it does not certify a test,
+review, or implementation result.
+
+Design considerations (not a review approval):
+The design below (Section 3) assigns file discovery/parsing/validation to
+data_access.py (load_json, load_vessels), sorting/formatting to
+operations.py, and menu wiring/printing to main.py — this satisfies every
+literal requirement: (a) reads every .json file in dataset/vessels, not a
+hard-coded list; (b) validates presence of all four required fields
+(vessel_id, name, imo, capacity_teu) before treating a record as valid;
+(c) sorts valid vessels by name case-insensitively (str.lower() / str.casefold()
+as the sort key, not locale-sensitive collation, since the spec only
+requires case-insensitivity, not locale ordering); (d) prints the exact
+header line, one formatted line per vessel using thousands-separator
+comma formatting for capacity_teu (via format(value, ",") or an f-string
+with a `:,` format spec), and the exact skipped-file summary line; (e) a
+malformed file (invalid JSON syntax, confirmed present as
+dataset/vessels/damaged-record.json, which is missing a closing brace) is
+caught via json.JSONDecodeError at the per-file level and counted as
+skipped without aborting the whole listing; (f) a well-formed JSON record
+that parses but is missing one or more required fields is also counted as
+skipped, using the same skip counter, per the "malformed file OR a record
+missing a required field" wording — both cases increment one combined
+"Skipped vessel files" counter, since the spec's example output shows a
+single combined count rather than two separate counters. Risks/ambiguities
+flagged for the implementer:
+ - Field-presence check must treat missing keys and JSON `null` values
+   both as failing validation (a key present but set to null is not a
+   usable value); this should be made explicit in the implementation's
+   validation helper, not left implicit.
+ - capacity_teu validation is fixed in Section 6: accept only a non-negative
+   JSON integer, reject booleans and numeric strings, and allow zero. This
+   is a project policy based on the dictionary's integer type.
+ - Duplicate vessel names or names differing only by case: valid records
+   arrive from the shared loader in sorted source-path order, then the
+   stable case-insensitive name sort preserves that order for equal names.
+ - Shared loader contract: the generic signatures and result shapes are
+   settled by INTEGRATED-CONTRACT-PLAN.md and Sections 5-6 below. The
+   earlier draft uncertainty about whether other tasks need different
+   return shapes is superseded; Task 1 uses the canonical LoadResult
+   contract and does not define an independent interface.
+These are design notes and integration decisions, not a claim of reviewer
+approval.
+
+Acceptance criteria (planned, not run):
+Section 4 below lists concrete, checkable acceptance criteria, and they map
+directly onto the assignment's acceptance-test-campaign "Files" row already
+present in test-ledger.csv line 2 ("Mixed valid and invalid vessels" / "List
+vessels" / "Valid vessels shown and malformed file skipped", currently
+status="Not run"). The plan's criteria explicitly cover: (1) the normal
+case against the real dataset/vessels directory contents observed during
+this planning pass (baltic-pioneer.json, nordic-relay.json,
+skagerrak-star.json = 3 valid vessels, plus damaged-record.json = 1
+malformed file confirmed truncated/missing closing brace); (2) a malformed
+JSON file specifically (already present as damaged-record.json, must not be
+repaired or deleted per START-HERE.txt); (3) a record missing a required
+field (not currently present in the sample data as a separate case from the
+malformed file, so the implementer must add or reason about this as a
+distinct code path even though today's dataset conflates it with the
+truncated-JSON case — flagged so it is not silently skipped in testing);
+(4) an empty or all-invalid directory, which should print the header line
+with zero vessel lines and "Skipped vessel files: N" (or 0). This plan does
+not mark Task 1 as validated or passed; it only defines what a future test
+run must check, matching the "Files" row's intent. The ledger is unchanged.
+
+No project tests, builds, or reviewer approvals are claimed by this plan
+revision.
+
+================================================================
+2. TASK 1 REQUIREMENT SUMMARY (verbatim from assignment PDF)
+================================================================
+
+BUSINESS OUTCOME: Give coordinators a trustworthy inventory built from
+independent JSON records.
+
+Read every .json file in dataset/vessels. Validate that vessel_id, name,
+imo and capacity_teu exist. Sort valid vessels by name, case-insensitively,
+and print one line per vessel. A malformed file or a record missing a
+required field must be reported and skipped without preventing valid
+vessels from appearing.
+
+Exact example output (client contract — copy verbatim, only the data
+varies):
+
+Registered HarborFlow vessels:
+- Baltic Pioneer | IMO 9312048 | 824 TEU
+- Nordic Relay | IMO 9471155 | 1,120 TEU
+- Skagerrak Star | IMO 9684207 | 1,460 TEU
+Skipped vessel files: 1
+
+Notes on the exact format:
+- Header line is literally "Registered HarborFlow vessels:" (no vessels ->
+  header still prints, followed directly by the skipped-count line).
+- Each vessel line: "- {name} | IMO {imo} | {capacity_teu with thousands
+  separator} TEU" — leading "- ", single spaces around "|", literal "IMO "
+  and " TEU" tokens are all part of the contract.
+- capacity_teu must use a comma thousands separator when >= 1000 (e.g.
+  "1,120", "1,460"); values under 1000 print with no separator (e.g.
+  "824").
+- Final line: "Skipped vessel files: {count}" printed unconditionally
+  (including when count is 0), directly after the last vessel line (no
+  blank line between).
+
+================================================================
+3. PROPOSED DESIGN
+================================================================
+
+Module responsibilities use the shared loading contract; task-specific
+sorting and display behavior remain as specified below:
+
+data_access.py:
+- load_json(path) -> dict | raises
+    Opens a single file at `path`, parses it with json.load, and returns the
+    parsed dict. Lets json.JSONDecodeError and OSError/FileNotFoundError
+    propagate to the caller — this function does NOT swallow errors itself,
+    so it stays reusable by other tasks that may want different error
+    handling. Uses `with open(path, "r", encoding="utf-8") as f:`.
+- load_vessels(directory) -> LoadResult[dict]
+    Enumerates every "*.json" file in `directory` (e.g. via
+    pathlib.Path(directory).glob("*.json"), sorted for deterministic
+    enumeration order before the later name-sort is applied). For each
+    file, use load_json(path); recoverable JSON and record-schema failures
+    become structured diagnostics and do not suppress later valid records.
+    Directory discovery and file I/O errors propagate explicitly. A valid
+    vessel must have correctly typed required fields, including an integer
+    capacity_teu. Returns valid records and diagnostics as defined in
+    INTEGRATED-CONTRACT-PLAN.md. All paths are constructed beneath the
+    project root derived from main.py's location.
+
+operations.py:
+- sort_vessels(vessels) -> list[dict]
+    Returns `sorted(vessels, key=lambda v: v["name"].casefold())` for
+    case-insensitive sort by name. Pure function, no I/O,
+    easily unit-testable.
+- format_vessel_line(vessel) -> str
+    Returns f"- {vessel['name']} | IMO {vessel['imo']} | "
+    f"{vessel['capacity_teu']:,} TEU" using the `:,` format spec for the
+    thousands separator. Capacity is already validated as an integer by
+    load_vessels; this formatter does not coerce strings.
+- list_registered_vessels(directory) -> None (or returns a list of printed
+    lines, if main.py prefers to keep all print() calls itself) — combines
+    load_vessels, sort_vessels, and format_vessel_line, then prints the
+    header line, each formatted vessel line, and the final "Skipped vessel
+    files: {n}" line. Whether this orchestration function lives in
+    operations.py or is inlined in main.py's menu branch is an
+    implementation-time choice; either satisfies the "main.py = menu/
+    prompt only" separation as long as main.py's branch for selection == 1
+    is a short call into operations.py rather than containing the
+    validation/formatting logic itself.
+
+main.py:
+- In the `elif selection == 1:` branch (replacing the current "Service not
+  implemented." placeholder for that case only — Task 1 is scoped to not
+  touch any other branch), call the operations.py orchestration function
+  (or call data_access.load_vessels + operations.sort_vessels +
+  print loop directly) with the dataset/vessels path, then return to the
+  loop top as today (no `continue`/`break` needed beyond existing loop
+  structure).
+- Recoverable per-file JSON/schema failures are returned as diagnostics
+  from data_access.py. Directory and file I/O failures propagate and must
+  reach an explicit, narrowly scoped service error path; do not silently
+  turn a fatal loader failure into a successful empty vessel list. Do not
+  use a blanket `except:`.
+
+Validation logic (explicit): a record is VALID only if it is an object with
+non-empty string vessel_id, name, and imo fields and a non-negative JSON
+integer capacity_teu (boolean is not accepted as an integer). Anything else
+at the per-record JSON/schema level yields one skipped-file diagnostic.
+Directory discovery and file I/O failures propagate and are not counted as
+recoverable skipped files.
+
+Sort key: vessel["name"].casefold() ascending (Python's default sorted()
+is stable and ascending; no explicit reverse needed).
+
+Malformed-file counting: Task 1's skipped count is the number of
+recoverable vessel-file/record diagnostics (one per rejected file, not one
+per invalid field), matching the example output's single trailing count.
+
+================================================================
+4. ACCEPTANCE CRITERIA CHECKLIST
+================================================================
+
+[ ] Normal/mixed case (matches dataset as currently observed): running
+    option 1 against dataset/vessels (3 valid files + damaged-record.json)
+    prints exactly:
+      Registered HarborFlow vessels:
+      - Baltic Pioneer | IMO 9312048 | 824 TEU
+      - Nordic Relay | IMO 9471155 | 1,120 TEU
+      - Skagerrak Star | IMO 9684207 | 1,460 TEU
+      Skipped vessel files: 1
+    with vessel lines in case-insensitive name order and capacity_teu
+    thousands-separated where applicable.
+
+[ ] Malformed JSON file: damaged-record.json (confirmed truncated / missing
+    closing brace) must not raise an uncaught exception and must not be
+    repaired or deleted; it must be counted in "Skipped vessel files" and
+    must not suppress the three valid vessels from printing.
+
+[ ] Record missing a required field: a syntactically valid JSON file
+    lacking one of vessel_id/name/imo/capacity_teu (or having it as null)
+    must be skipped and counted, without raising, and without affecting
+    other valid records. (Not present as a distinct sample file today —
+    implementer/tester should add a temporary local test file or mock data
+    to exercise this path in isolation; do not add such a file to the
+    shared dataset/vessels directory, which is protected/read-only.)
+
+[ ] Empty or fully-invalid directory: if dataset/vessels contained zero
+    valid vessels, the header line still prints, no vessel lines print,
+    and "Skipped vessel files: {n}" still prints (n = total files
+    present, or 0 if the directory itself is empty).
+
+[ ] CodeGrade-alternate-data safety: the implementation must not hard-code
+    the four sample vessel names/IMOs/capacities anywhere; it must derive
+    all output purely from parsing dataset/vessels at runtime (per
+    START-HERE.txt rule 7).
+
+[ ] Exact-string check: header "Registered HarborFlow vessels:", per-line
+    format "- {name} | IMO {imo} | {capacity},{teu-with-comma} TEU", and
+    footer "Skipped vessel files: {n}" all match the example byte-for-byte
+    (aside from the variable data), including spacing around "|" and the
+    literal tokens "IMO " / " TEU".
+
+[ ] Corresponds to test-ledger.csv row 2 ("Files" / "Mixed valid and
+    invalid vessels" / "List vessels" / "Valid vessels shown and malformed
+    file skipped"), currently status="Not run" — implementation should
+    make that row checkable/passable, though updating test-ledger.csv
+    itself is out of scope for this planning task.
+
+================================================================
+5. SHARED INTERFACE CONTRACT
+================================================================
+
+The former draft interface flexibility is superseded by
+INTEGRATED-CONTRACT-PLAN.md. All tasks use one load_json behavior, shared
+directory-loader results with structured diagnostics, and one project-root
+policy. Task 1 contributes valid vessel records and diagnostics; it does
+not define a separate incompatible return shape.
+
+================================================================
+6. INTEGRATION CONTRACT UPDATE
+================================================================
+
+INTEGRATED-CONTRACT-PLAN.md supersedes the draft loader signatures above.
+The shared vessel-directory loader returns valid records and structured
+diagnostics, not only a count; Task 1 derives its exact skipped-file count
+from those diagnostics and retains valid vessels. Task 1 reports the
+recoverable count using its exact mandated `Skipped vessel files: {n}`
+footer; it does not add per-file output that changes the assignment's
+inventory layout. A single-file load_json remains strict and propagates its
+errors; per-file malformed JSON and record-schema failures are recoverable,
+while directory and file I/O failures propagate explicitly.
+
+Use the shared project root derived from main.py's location, not the current
+working directory. Validate capacity_teu as a non-negative JSON integer
+(not bool and not numeric text); zero is valid. This project validation
+policy follows the data dictionary's integer field type and does not alter
+the assignment's exact inventory output.
