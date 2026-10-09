@@ -9,7 +9,10 @@ and text processing in text_tools.py.
 # Imports
 # Project modules this file uses. Add new imports here, not further down.
 # ---------------------------------------------------------------------------
+import csv
+
 import data_access
+import operations
 
 # The menu text is stored once as a constant so it is printed exactly the
 # same way every time. Prompts and wording are part of the client contract,
@@ -40,11 +43,101 @@ def run_list_vessels():
     """Task 1: List registered vessels."""
     print("Service 1 not implemented yet.")  # TODO: replace
 
-
+# ---------------------------------------------------------------------------
+# Task 2: START Inspect a vessel manifest
+# ---------------------------------------------------------------------------
 def run_inspect_manifest():
-    """Task 2: Inspect a vessel manifest."""
-    print("Service 2 not implemented yet.")  # TODO: replace
+    try:
+        vessels, vessel_problems = data_access.load_vessels()
+        calls, _ = data_access.load_port_calls()
+        manifests, _ = data_access.load_manifests()
+        shipments, _ = data_access.load_shipments()
+    except (FileNotFoundError, ValueError, csv.Error) as error:
+        print(f"Error - {error}")
+        return
 
+    print("Registered HarborFlow vessels:")
+    for vessel in vessels.values():
+        print("\n"
+            f"- {vessel['name']} | IMO {vessel['imo']} | "
+            f"{vessel['capacity_teu']:,} TEU"
+        )
+    for filename, reason in vessel_problems:
+        print("\n"
+            f"Skipped {filename}: {reason}")
+    print(f"Skipped vessel files: {len(vessel_problems)}\n")
+
+    vessel_name = input("Vessel name: ")
+    vessel = operations.find_vessel_by_name(vessel_name, vessels)
+
+    if vessel is None:
+        print("Vessel not found.")
+        return
+
+    reference_date = ask_reference_date()
+    call = operations.select_upcoming_call(
+        calls,
+        vessel["vessel_id"],
+        reference_date,
+    )
+
+    if call is None:
+        print("No upcoming port calls found.")
+        return
+
+    manifest = operations.find_manifest(manifests, call)
+    if manifest is None:
+        print("Manifest unavailable.")
+        return
+
+    report = operations.build_manifest_report(
+        vessel,
+        call,
+        manifest,
+        shipments,
+    )
+    print_manifest_report(report)
+
+
+def ask_reference_date():
+    """Ask until the user enters a real YYYY-MM-DD date."""
+    while True:
+        value = input("Reference date (YYYY-MM-DD): ")
+        try:
+            return operations.parse_reference_date(value)
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD.")
+
+
+def print_manifest_report(report):
+    """Print the Task 2 report in the required format."""
+    print(
+        "\n"
+        f"Manifest for {report['vessel_name']} | "
+        f"Call {report['call_id']} | {report['date_display']}"
+        "\n"
+    )
+
+    for number, line in enumerate(report["lines"], start=1):
+        if line["resolved"]:
+            print(
+                "\n"
+                f"{number}. {line['shipment_id']} | "
+                f"{line['customer']} | {line['weight_kg']} kg | "
+                f"{line['cargo_type']}"
+            )
+        else:
+            print(f"{number}. {line['shipment_id']} | MISSING RECORD")
+
+    print(f"""
+    Declared shipments: {report['declared']}
+    Resolved weight: {report['resolved_weight']:.2f} kg
+    Missing shipment records: {report['missing']}
+""")
+
+# ---------------------------------------------------------------------------
+# Task 2: END
+# ---------------------------------------------------------------------------
 
 def run_priority_cargo():
     """Task 3: Identify priority cargo."""
