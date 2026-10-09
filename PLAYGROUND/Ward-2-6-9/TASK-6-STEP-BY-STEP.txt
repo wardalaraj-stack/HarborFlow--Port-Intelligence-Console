@@ -1,0 +1,502 @@
+HARBORFLOW ASSIGNMENT 2
+TASK 6 - SANITIZE AN INCIDENT REPORT
+
+This guide assumes Task 0 already works:
+
+    - the main menu appears;
+    - option 6 calls run_sanitize_incident();
+    - the service returns to the menu when it finishes.
+
+You do NOT need Tasks 1, 2, 3, 4, or 5 before starting Task 6.
+
+Task 6 uses only:
+
+    code/main.py
+    code/data_access.py
+    code/text_tools.py
+    dataset/incidents/
+    exports/sanitized/
+
+Do not change the supplied incident JSON files.
+
+============================================================
+WHAT TASK 6 MUST DO
+============================================================
+
+1. Load incident reports from dataset/incidents/.
+2. Display incident titles in case-insensitive alphabetical order.
+3. Number the titles starting from 1.
+4. Ask the user to select an incident number.
+5. Replace sensitive values in the selected report:
+
+       Container ID -> [CONTAINER]
+       Seal number  -> [SEAL]
+       Email address -> [EMAIL]
+
+6. Save a changed report here:
+
+       exports/sanitized/<incident_id>-sanitized.txt
+
+7. If no sensitive value exists, do not create a file. Print exactly:
+
+       Incident contains no share-sensitive identifiers.
+
+Required invalid-selection message:
+
+       Error - Select a listed incident.
+
+============================================================
+STEP 1 - CHECK data_access.py
+============================================================
+
+Open:
+
+    code/data_access.py
+
+Task 6 needs these existing items:
+
+    INCIDENTS_DIR
+    SANITIZED_DIR
+    load_incidents()
+
+The current project already contains them.
+
+Use the existing loader:
+
+    incidents, skipped_files = data_access.load_incidents()
+
+The incidents value is a dictionary. It uses incident_id as its key:
+
+    {
+        "INC-102": {
+            "incident_id": "INC-102",
+            "call_id": "HFL-GOT-2048",
+            "title": "Reefer temperature deviation",
+            "report": "Container MSCU1234567 ..."
+        }
+    }
+
+Do not create another incident loader in text_tools.py or main.py.
+
+============================================================
+STEP 2 - ADD IMPORTS IN text_tools.py
+============================================================
+
+Open:
+
+    code/text_tools.py
+
+Add:
+
+    import re
+    from pathlib import Path
+
+re is Python's regular-expression module.
+Path helps create the output folder and filename safely.
+
+============================================================
+STEP 3 - CREATE THE THREE REGEX PATTERNS
+============================================================
+
+Add these near the top of text_tools.py:
+
+    CONTAINER_PATTERN = re.compile(
+        r"\b[A-Za-z]{4}\d{7}\b",
+        re.IGNORECASE,
+    )
+
+    SEAL_PATTERN = re.compile(
+        r"\bSEAL-\d{6}\b",
+        re.IGNORECASE,
+    )
+
+    EMAIL_PATTERN = re.compile(
+        r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"
+    )
+
+What each pattern means:
+
+    Container:
+        exactly four letters and seven digits
+        example: MSCU1234567
+
+    Seal:
+        SEAL- followed by exactly six digits
+        example: SEAL-884210
+
+    Email:
+        allowed text before @, a domain, and a final . plus at least
+        two letters
+        example: ops@harborflow.se
+
+re.IGNORECASE means these also match:
+
+    mscu1234567
+    seal-884210
+
+The \b boundaries stop a bigger word or longer number from being partly
+redacted by mistake.
+
+============================================================
+STEP 4 - CREATE THE PURE SANITIZING FUNCTION
+============================================================
+
+Still in:
+
+    code/text_tools.py
+
+Add:
+
+    def sanitize_report(report):
+        result = report
+
+        result = re.sub(
+            CONTAINER_PATTERN,
+            "[CONTAINER]",
+            result,
+        )
+        result = re.sub(
+            SEAL_PATTERN,
+            "[SEAL]",
+            result,
+        )
+        result = re.sub(
+            EMAIL_PATTERN,
+            "[EMAIL]",
+            result,
+        )
+
+        changed = result != report
+        return result, changed
+
+This is called a pure function because:
+
+    - it receives text;
+    - it returns text and a True/False value;
+    - it does not print;
+    - it does not ask for input;
+    - it does not write a file.
+
+Example:
+
+    original = (
+        "Container MSCU1234567 arrived with seal SEAL-884210. "
+        "Notify ops@harborflow.se."
+    )
+
+    cleaned, changed = sanitize_report(original)
+
+The result should be:
+
+    [CONTAINER] arrived with seal [SEAL]. Notify [EMAIL].
+
+The variable changed should be True.
+
+============================================================
+STEP 5 - SORT INCIDENTS BY TITLE
+============================================================
+
+Add this helper in text_tools.py:
+
+    def sort_incidents(incidents):
+        return sorted(
+            incidents.values(),
+            key=lambda incident: incident["title"].casefold(),
+        )
+
+Why use incidents.values()?
+
+    load_incidents() returns a dictionary.
+    .values() gives the incident dictionaries inside it.
+
+Why use casefold()?
+
+    It compares titles without caring about upper- or lowercase letters.
+
+Example sorted list:
+
+    1. Gate congestion delay
+    2. Reefer temperature deviation
+    3. Reefer transfer delayed
+    4. Routine inspection completed
+
+============================================================
+STEP 6 - WRITE A CHANGED REPORT
+============================================================
+
+Add this helper in text_tools.py:
+
+    def write_sanitized_report(incident_id, sanitized_text, output_dir):
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_path = output_dir / f"{incident_id}-sanitized.txt"
+
+        with output_path.open(
+            "w",
+            encoding="utf-8",
+            newline="",
+        ) as file:
+            file.write(sanitized_text)
+
+        return output_path
+
+Important:
+
+    Do not call this function when changed is False.
+
+This means no output folder or output file is created for a report without
+container IDs, seals, or email addresses.
+
+The required output path is:
+
+    exports/sanitized/<incident_id>-sanitized.txt
+
+Example:
+
+    exports/sanitized/INC-102-sanitized.txt
+
+============================================================
+STEP 7 - IMPORT text_tools IN main.py
+============================================================
+
+Open:
+
+    code/main.py
+
+Near the other imports, add:
+
+    import text_tools
+
+main.py already imports data_access.
+
+The direction must be:
+
+    main.py -> data_access.py
+    main.py -> text_tools.py
+
+Do not import main.py inside text_tools.py.
+
+============================================================
+STEP 8 - LOAD AND DISPLAY INCIDENTS
+============================================================
+
+Replace the Task 6 placeholder:
+
+    def run_sanitize_incident():
+        print("Service 6 not implemented yet.")
+
+with the start of this service:
+
+    def run_sanitize_incident():
+        try:
+            incidents, skipped_files = data_access.load_incidents()
+        except (FileNotFoundError, ValueError, json.JSONDecodeError) as error:
+            print(f"Error - {error}")
+            return
+
+        if not incidents:
+            print("No incident reports available.")
+            return
+
+        sorted_incidents = text_tools.sort_incidents(incidents)
+
+        for number, incident in enumerate(sorted_incidents, start=1):
+            print(f"{number}. {incident['title']}")
+
+You will also need this import at the top of main.py:
+
+    import json
+
+The purpose of this section:
+
+    - load valid incident data;
+    - stop safely if the incident folder cannot be used;
+    - sort titles;
+    - display each title with a user-friendly number.
+
+============================================================
+STEP 9 - ASK FOR A VALID INCIDENT NUMBER
+============================================================
+
+Continue inside run_sanitize_incident():
+
+    while True:
+        answer = input("Select incident: ")
+
+        try:
+            choice = int(answer.strip())
+
+            if not 1 <= choice <= len(sorted_incidents):
+                raise ValueError
+
+            break
+
+        except ValueError:
+            print("Error - Select a listed incident.")
+
+This loop must repeat only:
+
+    Select incident:
+
+Do not print the title list again after invalid input.
+
+The user sees numbers starting at 1, but Python lists start at 0.
+Convert the selected number like this:
+
+    selected_incident = sorted_incidents[choice - 1]
+
+============================================================
+STEP 10 - SANITIZE THE SELECTED REPORT
+============================================================
+
+Continue inside run_sanitize_incident():
+
+    sanitized_text, changed = text_tools.sanitize_report(
+        selected_incident["report"]
+    )
+
+    if not changed:
+        print("Incident contains no share-sensitive identifiers.")
+        return
+
+This exactly handles the no-match rule:
+
+    - no output file;
+    - exact required message;
+    - service returns to the Task 0 menu.
+
+============================================================
+STEP 11 - SAVE A CHANGED REPORT
+============================================================
+
+Continue inside run_sanitize_incident():
+
+    try:
+        text_tools.write_sanitized_report(
+            selected_incident["incident_id"],
+            sanitized_text,
+            data_access.SANITIZED_DIR,
+        )
+    except OSError as error:
+        print(f"Error - could not write sanitized report: {error}")
+        return
+
+    incident_id = selected_incident["incident_id"]
+    print(
+        f"Sanitized report saved: "
+        f"exports/sanitized/{incident_id}-sanitized.txt"
+    )
+
+Do not write an absolute machine path in the user message.
+
+============================================================
+STEP 12 - UNDERSTAND THE COMPLETE FLOW
+============================================================
+
+The complete connection is:
+
+    main.py
+        |
+        | data_access.load_incidents()
+        v
+    dataset/incidents/*.json
+        |
+        | incident dictionary
+        v
+    text_tools.sort_incidents()
+        |
+        | selected incident["report"]
+        v
+    text_tools.sanitize_report()
+        |
+        | changed report only
+        v
+    text_tools.write_sanitized_report()
+        |
+        v
+    exports/sanitized/<incident_id>-sanitized.txt
+
+============================================================
+STEP 13 - TEST TASK 6
+============================================================
+
+Test these cases one by one:
+
+1. Titles are sorted case-insensitively and numbered from 1.
+
+2. Type text instead of a number:
+
+       abc
+
+   Expected:
+
+       Error - Select a listed incident.
+
+3. Type 0 or a number bigger than the incident list.
+
+   Expected:
+
+       Error - Select a listed incident.
+
+4. Test one container ID:
+
+       MSCU1234567
+
+   Expected:
+
+       [CONTAINER]
+
+5. Test one seal:
+
+       SEAL-884210
+
+   Expected:
+
+       [SEAL]
+
+6. Test one email:
+
+       ops@harborflow.se
+
+   Expected:
+
+       [EMAIL]
+
+7. Test mixed values:
+
+       Container MSCU1234567 has seal SEAL-884210.
+       Notify ops@harborflow.se.
+
+   Expected:
+
+       Container [CONTAINER] has seal [SEAL].
+       Notify [EMAIL].
+
+8. Test lower/mixed-case prefixes:
+
+       mscu1234567
+       seal-884210
+
+   They must still be redacted.
+
+9. Test a report with no sensitive values.
+
+   Expected:
+
+       Incident contains no share-sensitive identifiers.
+
+   Confirm no sanitized file was created.
+
+10. Test a report with several lines.
+
+    Confirm the saved output keeps the same line breaks and all normal
+    punctuation outside the identifiers.
+
+11. Confirm a changed report creates exactly:
+
+       exports/sanitized/<incident_id>-sanitized.txt
+
+============================================================
+END OF TASK 6 GUIDE
+============================================================
