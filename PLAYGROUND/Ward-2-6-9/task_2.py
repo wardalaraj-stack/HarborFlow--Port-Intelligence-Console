@@ -1,21 +1,4 @@
 """Standalone Task 2 service: inspect a vessel manifest.
-
-Run it from the ass2 folder with:
-
-    python tests/TEST_CODE/task_2.py
-
-Run its acceptance scenarios with:
-
-    python tests/TEST_CODE/task_2.py --selftest
-
-This file is a self-contained copy of the Task 2 service, written in the same
-standalone style as tests/TEST_CODE/task_1.py. It reads the supplied dataset
-and never writes to it.
-
-These notes explain the basic Python words used below.
-# A string is text inside quotation marks. A variable is a name that stores a
-# value. A function is a named group of steps that can be run by calling it.
-# A comment starts with #. Python ignores comments; they are notes for people.
 """
 
 # import makes a built-in Python tool available to this file.
@@ -27,6 +10,10 @@ import json
 import re
 from datetime import date
 from pathlib import Path
+from task_1 import load_json , validate_vessel , load_vessels
+
+
+
 
 
 # ---------------------------------------------------------------- ----------
@@ -36,7 +23,7 @@ from pathlib import Path
 # walks up three folders: TEST_CODE -> tests -> ass2. Everything the service
 # reads is reached from there, so the file works from any working directory
 # and never stores one student's machine-specific absolute path.
-DATASET_DIRECTORY = Path(__file__).resolve().parents[2] / "data" / "dataset"
+DATASET_DIRECTORY = Path(__file__).resolve().parents[2] / "dataset"
 VESSELS_DIRECTORY = DATASET_DIRECTORY / "vessels"
 PORT_CALLS_FILE = DATASET_DIRECTORY / "port_calls.csv"
 MANIFESTS_DIRECTORY = DATASET_DIRECTORY / "manifests"
@@ -57,28 +44,6 @@ DATE_SHAPE = re.compile(r"\d{4}-\d{2}-\d{2}")
 # ---------------------------------------------------------------- ----------
 # Reading one JSON file
 # --------------------------------------------------------------------------
-def load_json(path):
-    # This function reads one file and gives the decoded record back to its
-    # caller. path is its input: the location of one JSON file.
-    """Read one JSON object from a file and return it as a dictionary."""
-
-    # open("r") means open for reading and encoding="utf-8" tells Python how
-    # to interpret the text. as json_file gives the open file a local name.
-    # with automatically closes the file when the indented block finishes.
-    with Path(path).open("r", encoding="utf-8") as json_file:
-        # json.load turns JSON text into Python values. JSON objects become
-        # dictionaries: groups of named values, like a form.
-        record = json.load(json_file)
-
-    # A file can be valid JSON but hold the wrong shape, such as a list.
-    # isinstance asks "is record a dictionary?" and not reverses the answer.
-    if not isinstance(record, dict):
-        raise ValueError("top-level value must be a JSON object")
-
-    # return sends the record back to the place that called load_json.
-    return record
-
-
 # ---------------------------------------------------------------- ----------
 # Small validation helpers
 # --------------------------------------------------------------------------
@@ -102,23 +67,6 @@ def is_whole_number(value):
     # Numbers in JSON arrive as int or float. bool is a special kind of
     # number in Python, so True must be rejected separately.
     return isinstance(value, (int, float)) and not isinstance(value, bool)
-
-
-def validate_vessel(record):
-    """Return a problem message for one vessel record, or None if it is good."""
-    # The identifier, name and IMO are text. capacity_teu is a number, so it
-    # is checked separately below instead of with the text fields.
-    problems = text_fields(record, VESSEL_TEXT_FIELDS)
-    # Report the first problem only, in field order, rather than a cascade of
-    # messages for a record that is already unusable.
-    if problems:
-        return problems[0]
-    if "capacity_teu" not in record:
-        return "capacity_teu is missing"
-    # capacity_teu must be a whole number and must not be negative.
-    if not is_whole_number(record["capacity_teu"]) or record["capacity_teu"] < 0:
-        return "capacity_teu must be a non-negative whole number"
-    return None
 
 
 def validate_manifest(record):
@@ -217,11 +165,6 @@ def load_records(directory, key_field, validate, label):
         records.append(record)
 
     return records, problems
-
-
-def load_vessels(directory):
-    """Load valid vessels together with the rejected-file messages."""
-    return load_records(directory, "vessel_id", validate_vessel, "Vessel data")
 
 
 def load_manifests(directory):

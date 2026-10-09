@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-VESSELS_DIRECTORY = PROJECT_ROOT / "data" / "dataset" / "vessels"
+VESSELS_DIRECTORY = PROJECT_ROOT / "dataset" / "vessels"
 
 REQUIRED_TEXT_FIELDS = ("vessel_id", "name", "imo")
 

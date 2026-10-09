@@ -1,0 +1,545 @@
+HARBORFLOW ASSIGNMENT 2
+TASK 2 - INSPECT A VESSEL MANIFEST
+
+This guide assumes that Task 0 and Task 1 are already working.
+
+Files used in this guide:
+    code/main.py
+    code/data_access.py
+
+Do not change the files inside dataset/.
+The program must read the IDs stored inside the records. Do not trust filenames
+to identify vessels, calls, manifests, or shipments.
+
+============================================================
+WHAT TASK 2 MUST DO
+============================================================
+
+The user chooses a vessel and a reference date.
+
+The program must:
+
+1. Find the vessel by name.
+2. Find the earliest port call for that vessel on or after the date.
+3. Find the manifest for that call.
+4. Find every shipment listed in the manifest.
+5. Keep the shipment order from the manifest.
+6. Show missing shipments as MISSING RECORD.
+7. Add the weights of resolved shipments only.
+
+Required messages:
+
+    Vessel not found.
+    Error - Date must use YYYY-MM-DD.
+    No upcoming port calls found.
+    Manifest unavailable.
+
+============================================================
+STEP 1 - CHECK THE EXISTING TASK 1 CODE
+============================================================
+
+Before writing Task 2, confirm that Task 1 already gives you:
+
+    - a list of valid vessel dictionaries;
+    - the vessel fields vessel_id and name;
+    - a way to display the registered vessels.
+
+A vessel record looks like this:
+
+    {
+        "vessel_id": "VSL-002",
+        "name": "Nordic Relay",
+        "imo": "9471155",
+        "capacity_teu": 1120
+    }
+
+Do not create a second vessel loader if Task 1 already has one.
+
+============================================================
+STEP 2 - ADD COMMON IMPORTS IN data_access.py
+============================================================
+
+Open:
+
+    code/data_access.py
+
+Make sure these imports are available:
+
+    import csv
+    import json
+    from pathlib import Path
+
+The loaders in this file should only read files and validate records.
+They should not ask the user questions and should not print the final report.
+
+============================================================
+STEP 3 - CREATE A JSON LOADER
+============================================================
+
+If Task 1 does not already provide this helper, add:
+
+    def load_json(path):
+        with Path(path).open("r", encoding="utf-8") as file:
+            record = json.load(file)
+
+        if not isinstance(record, dict):
+            raise ValueError("top-level value must be a JSON object")
+
+        return record
+
+This function reads one JSON file.
+It rejects a JSON list, string, number, true, false, or null because Task 2
+needs each file to contain one record object.
+
+============================================================
+STEP 4 - LOAD MANIFEST RECORDS
+============================================================
+
+Add a function that reads every JSON file in dataset/manifests/.
+
+Example:
+
+    def load_manifests(directory):
+        manifests = []
+        problems = []
+        seen_call_ids = set()
+
+        directory = Path(directory)
+
+        for path in sorted(directory.glob("*.json")):
+            try:
+                record = load_json(path)
+            except (FileNotFoundError, json.JSONDecodeError, ValueError) as error:
+                problems.append(f"{path.name}: {error}")
+                continue
+
+            required = ("call_id", "vessel_id")
+            if any(field not in record for field in required):
+                problems.append(f"{path.name}: required field is missing")
+                continue
+
+            if not isinstance(record.get("shipment_ids"), list):
+                problems.append(f"{path.name}: shipment_ids must be a list")
+                continue
+
+            if not all(isinstance(item, str) for item in record["shipment_ids"]):
+                problems.append(f"{path.name}: shipment_ids must contain text")
+                continue
+
+            if not isinstance(record.get("event_codes"), list):
+                problems.append(f"{path.name}: event_codes must be a list")
+                continue
+
+            if record["call_id"] in seen_call_ids:
+                problems.append(f"{path.name}: duplicate call_id")
+                continue
+
+            seen_call_ids.add(record["call_id"])
+            manifests.append(record)
+
+        return manifests, problems
+
+The important points are:
+
+    - read every JSON file;
+    - skip one bad file instead of stopping all loading;
+    - validate shipment_ids and event_codes as lists;
+    - use the call_id stored inside the JSON record;
+    - keep the first record when call_id is duplicated.
+
+============================================================
+STEP 5 - LOAD SHIPMENT RECORDS
+============================================================
+
+Add a function for dataset/shipments/.
+
+Example:
+
+    def load_shipments(directory):
+        shipments = []
+        problems = []
+        seen_ids = set()
+
+        for path in sorted(Path(directory).glob("*.json")):
+            try:
+                record = load_json(path)
+            except (FileNotFoundError, json.JSONDecodeError, ValueError) as error:
+                problems.append(f"{path.name}: {error}")
+                continue
+
+            required = (
+                "shipment_id",
+                "customer",
+                "destination",
+                "priority",
+                "weight_kg",
+            )
+
+            if any(field not in record for field in required):
+                problems.append(f"{path.name}: required field is missing")
+                continue
+
+            if isinstance(record["weight_kg"], bool):
+                problems.append(f"{path.name}: weight_kg must be a number")
+                continue
+
+            if not isinstance(record["weight_kg"], (int, float)):
+                problems.append(f"{path.name}: weight_kg must be a number")
+                continue
+
+            if record["shipment_id"] in seen_ids:
+                problems.append(f"{path.name}: duplicate shipment_id")
+                continue
+
+            seen_ids.add(record["shipment_id"])
+            shipments.append(record)
+
+        return shipments, problems
+
+The optional fields are:
+
+    hazardous
+    temperature_controlled
+    cargo_type
+
+Do not reject a shipment only because one of these optional fields is absent.
+Use False for absent Boolean fields and NOT PROVIDED for absent cargo_type when
+you print the report.
+
+============================================================
+STEP 6 - LOAD port_calls.csv
+============================================================
+
+Add a CSV loader:
+
+    def load_port_calls(path):
+        calls = []
+        problems = []
+
+        with Path(path).open("r", encoding="utf-8", newline="") as file:
+            reader = csv.DictReader(file)
+
+            required = {
+                "call_id",
+                "vessel_id",
+                "port_code",
+                "arrival_date",
+            }
+
+            if not required.issubset(reader.fieldnames or []):
+                raise ValueError("port_calls.csv has an invalid header")
+
+            for row_number, row in enumerate(reader, start=2):
+                if not row.get("call_id") or not row.get("vessel_id"):
+                    problems.append(f"row {row_number}: required value is missing")
+                    continue
+
+                calls.append({
+                    "call_id": row["call_id"],
+                    "vessel_id": row["vessel_id"],
+                    "port_code": row["port_code"],
+                    "arrival_date": row["arrival_date"],
+                })
+
+        return calls, problems
+
+Keep arrival_date as text here. Task 2 will parse it when it chooses a call.
+That allows one invalid date row to be skipped without stopping later rows.
+
+============================================================
+STEP 7 - ADD SMALL HELPERS IN main.py
+============================================================
+
+Open:
+
+    code/main.py
+
+Add:
+
+    import re
+    from datetime import date
+
+Use a helper for vessel lookup:
+
+    def find_vessel_by_name(name, vessels):
+        wanted = name.strip().casefold()
+
+        for vessel in vessels:
+            if vessel["name"].strip().casefold() == wanted:
+                return vessel
+
+        return None
+
+Use a helper for the user's date:
+
+    def ask_reference_date():
+        while True:
+            value = input("Reference date (YYYY-MM-DD): ").strip()
+
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+                print("Error - Date must use YYYY-MM-DD.")
+                continue
+
+            try:
+                return date.fromisoformat(value)
+            except ValueError:
+                print("Error - Date must use YYYY-MM-DD.")
+
+The date loop must repeat only the date prompt.
+Do not ask for the vessel name again after a bad date.
+
+============================================================
+STEP 8 - SELECT THE EARLIEST UPCOMING CALL
+============================================================
+
+Add:
+
+    def select_upcoming_call(calls, vessel_id, reference_date):
+        candidates = []
+
+        for call in calls:
+            if call["vessel_id"] != vessel_id:
+                continue
+
+            try:
+                arrival = date.fromisoformat(call["arrival_date"])
+            except ValueError:
+                continue
+
+            if arrival >= reference_date:
+                candidates.append((arrival, call["call_id"], call))
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda item: (item[0], item[1]))
+        return candidates[0][2]
+
+The comparison is inclusive:
+
+    arrival_date >= reference_date
+
+The tuple sort gives the required tie behavior:
+
+    first: earliest date
+    second: alphabetically smallest call_id
+
+============================================================
+STEP 9 - FIND THE MANIFEST BY call_id
+============================================================
+
+Add:
+
+    def find_manifest(manifests, call):
+        for manifest in manifests:
+            if manifest["call_id"] == call["call_id"]:
+                if manifest["vessel_id"] == call["vessel_id"]:
+                    return manifest
+
+        return None
+
+The filename is not used here.
+The call_id inside the manifest is the authority.
+
+============================================================
+STEP 10 - INDEX SHIPMENTS FOR QUICK LOOKUP
+============================================================
+
+Add:
+
+    def index_shipments(shipments):
+        return {
+            shipment["shipment_id"]: shipment
+            for shipment in shipments
+        }
+
+Then a shipment can be found like this:
+
+    shipment = shipment_by_id.get(shipment_id)
+
+If shipment is None, the manifest refers to a missing record.
+
+============================================================
+STEP 11 - BUILD THE REPORT IN MANIFEST ORDER
+============================================================
+
+Add:
+
+    def build_manifest_report(vessel, call, manifest, shipment_by_id):
+        lines = []
+        resolved_weight = 0.0
+        missing = 0
+
+        arrival = date.fromisoformat(call["arrival_date"])
+        date_display = f"{arrival.day} {arrival.strftime('%B %Y')}"
+
+        for shipment_id in manifest["shipment_ids"]:
+            shipment = shipment_by_id.get(shipment_id)
+
+            if shipment is None:
+                lines.append({
+                    "resolved": False,
+                    "shipment_id": shipment_id,
+                })
+                missing += 1
+                continue
+
+            cargo_type = shipment.get("cargo_type")
+            if cargo_type is None:
+                cargo_type = "NOT PROVIDED"
+
+            lines.append({
+                "resolved": True,
+                "shipment_id": shipment["shipment_id"],
+                "customer": shipment["customer"],
+                "weight_kg": shipment["weight_kg"],
+                "cargo_type": cargo_type,
+            })
+
+            resolved_weight += shipment["weight_kg"]
+
+        return {
+            "vessel_name": vessel["name"],
+            "call_id": call["call_id"],
+            "date_display": date_display,
+            "lines": lines,
+            "declared": len(manifest["shipment_ids"]),
+            "resolved_weight": resolved_weight,
+            "missing": missing,
+        }
+
+Notice that the loop uses manifest["shipment_ids"] directly.
+Do not sort this list because the output must keep manifest order.
+
+============================================================
+STEP 12 - PRINT THE REPORT
+============================================================
+
+Add:
+
+    def print_manifest_report(report):
+        print(
+            f"Manifest for {report['vessel_name']} | "
+            f"Call {report['call_id']} | {report['date_display']}"
+        )
+
+        for number, line in enumerate(report["lines"], start=1):
+            if line["resolved"]:
+                print(
+                    f"{number}. {line['shipment_id']} | "
+                    f"{line['customer']} | "
+                    f"{line['weight_kg']} kg | "
+                    f"{line['cargo_type']}"
+                )
+            else:
+                print(f"{number}. {line['shipment_id']} | MISSING RECORD")
+
+        print(f"Declared shipments: {report['declared']}")
+        print(f"Resolved weight: {report['resolved_weight']:.2f} kg")
+        print(f"Missing shipment records: {report['missing']}")
+
+The individual weight keeps its normal value, such as 860.0.
+Only the total must always have two decimal places, such as 860.00.
+
+============================================================
+STEP 13 - CONNECT THE SERVICE TO THE EXISTING MENU
+============================================================
+
+Create one function that runs option 2 once.
+Use the existing Task 0 menu to call this function when the user selects 2.
+
+Example shape:
+
+    def inspect_vessel_manifest(vessels, calls, manifests, shipments):
+        print_inventory(vessels)
+
+        vessel_name = input("Vessel name: ")
+        vessel = find_vessel_by_name(vessel_name, vessels)
+
+        if vessel is None:
+            print("Vessel not found.")
+            return
+
+        reference_date = ask_reference_date()
+        call = select_upcoming_call(
+            calls,
+            vessel["vessel_id"],
+            reference_date,
+        )
+
+        if call is None:
+            print("No upcoming port calls found.")
+            return
+
+        manifest = find_manifest(manifests, call)
+        if manifest is None:
+            print("Manifest unavailable.")
+            return
+
+        shipment_by_id = index_shipments(shipments)
+        report = build_manifest_report(
+            vessel,
+            call,
+            manifest,
+            shipment_by_id,
+        )
+        print_manifest_report(report)
+
+The menu branch should call this service and then return to the existing menu.
+The service must not close the whole program.
+
+============================================================
+STEP 14 - TEST TASK 2
+============================================================
+
+Test these cases one at a time:
+
+1. A normal vessel and date produce the manifest report.
+2. Spaces and different letter case still find the vessel.
+3. An unknown vessel prints:
+
+       Vessel not found.
+
+4. An invalid date prints:
+
+       Error - Date must use YYYY-MM-DD.
+
+   Then only the date prompt repeats.
+5. A call on the reference date is accepted.
+6. Two calls on the same date choose the smallest call_id.
+7. An invalid arrival date in another call does not crash the program.
+8. No eligible call prints:
+
+       No upcoming port calls found.
+
+9. A missing manifest prints:
+
+       Manifest unavailable.
+
+10. A missing shipment stays in the correct position and prints:
+
+       MISSING RECORD
+
+11. Missing cargo_type prints:
+
+       NOT PROVIDED
+
+12. The total includes resolved shipments only.
+
+Example real-data check:
+
+    Vessel name: Nordic Relay
+    Reference date (YYYY-MM-DD): 2026-10-18
+
+Expected important output:
+
+    Manifest for Nordic Relay | Call HFL-GOT-2048 | 18 October 2026
+    1. SHP-1042 | Norra MedTech AB | 860.0 kg | REFRIGERATED
+    2. SHP-1051 | MISSING RECORD
+    Declared shipments: 2
+    Resolved weight: 860.00 kg
+    Missing shipment records: 1
+
+============================================================
+END OF TASK 2 GUIDE
+============================================================

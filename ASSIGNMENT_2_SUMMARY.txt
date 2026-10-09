@@ -1,0 +1,340 @@
+================================================================================
+          HARBORFLOW PORT INTELLIGENCE CONSOLE - ASSIGNMENT 2 GUIDE
+                 Simple Explanations for Complete Beginners
+================================================================================
+
+Welcome! If you have never written a line of code before, this guide is written 
+specifically for you. It translates all the technical words from the Assignment 2 
+PDF into plain, everyday English.
+
+--------------------------------------------------------------------------------
+PART 1: WHAT IS THE BIG PICTURE? (THE PROGRAM'S GOAL)
+--------------------------------------------------------------------------------
+
+Imagine you are managing a busy shipping harbor (HarborFlow Logistics). Every day:
+- Cargo ships arrive and leave.
+- Thousands of shipping containers and packages are loaded and unloaded.
+- Weather storms roll in from the sea.
+- Accidents and delays happen (equipment breaks, packages get wet, etc.).
+
+Currently, HarborFlow has a big mess:
+- Ship info is in one folder.
+- Cargo lists are in another folder.
+- Schedules are in a spreadsheet.
+- Weather forecasts are in another spreadsheet.
+- Accident reports are in text notes written by workers.
+
+Every morning, managers waste hours manually clicking through different files, 
+copying and pasting numbers into spreadsheets just to answer simple questions like:
+"Is our ship arriving today?", "Is the cargo frozen food?", or "Is the weather dangerous?"
+
+YOUR GOAL IN THIS ASSIGNMENT:
+Build a single, centralized computer program (a "Console" running in the terminal) 
+that connects all these separate files together. A port worker can simply sit at 
+their screen, pick an option from a numbered menu (1 to 10), and get instant, 
+accurate answers without the program ever crashing.
+
+--------------------------------------------------------------------------------
+PART 2: HOW THE DATA IS ORGANIZED (THE "FILING CABINET")
+--------------------------------------------------------------------------------
+
+Think of the computer files as drawers in a filing cabinet:
+
+1. VESSELS (dataset/vessels/)
+   - Contains files describing ships: Ship ID, Ship Name, Official ID (IMO number), 
+     and how many containers the ship can carry.
+
+2. PORT CALLS (dataset/port_calls.csv)
+   - A schedule table showing visits: "Ship X is visiting Port Y on Date Z".
+
+3. MANIFESTS (dataset/manifests/)
+   - The packing slip for a specific ship visit. It lists the tracking numbers 
+     of all the boxes/packages carried on that trip.
+
+4. SHIPMENTS (dataset/shipments/)
+   - Individual package details: Who owns the package (customer), where it is going 
+     (destination), how heavy it is (weight), whether it needs a freezer (refrigerated), 
+     whether it contains dangerous chemicals (hazardous), or if it's express delivery.
+
+5. WEATHER (dataset/weather.csv)
+   - Weather forecasts for each port: Wind speed, rain amount, and ocean wave height.
+
+6. INCIDENTS (dataset/incidents/)
+   - Reports written when something went wrong (like a gate traffic jam or a broken freezer).
+
+--------------------------------------------------------------------------------
+PART 3: TASK-BY-TASK EXPLANATION (TASKS 0 TO 9)
+--------------------------------------------------------------------------------
+
+Here is what every single task does, why it is needed, and how it works:
+
+================================================================================
+TASK 0: THE PRODUCT SHELL (THE MAIN MENU)
+================================================================================
+What is it in plain English?
+  This is the front door of your program. When you run the program, it displays a 
+  menu numbered 1 to 10 on the screen and waits for the worker to type a number.
+
+What the worker sees:
+  1. List registered vessels
+  2. Inspect a vessel manifest
+  3. Identify priority cargo
+  4. Export a customer operations profile
+  5. Find port calls by month
+  6. Sanitize an incident report
+  7. Analyze the longest stable event sequence
+  8. Assess weather risk for upcoming calls
+  9. Search incident reports
+  10. Close console
+  Select service: 
+
+What you have to do:
+  - Keep the program running in a continuous loop until the user types '10'.
+  - If the user types nonsense (like 'hello' or '99'), do NOT crash. Politely show:
+    "Error - Select a service from 1 to 10." and ask again.
+  - When the user selects '10', print:
+    "Console closed. HarborFlow operational data remains safe." and cleanly stop.
+  - Golden Rule: Never let unexpected errors crash the program. Always catch the 
+    problem and return safely to the menu.
+
+================================================================================
+TASK 1: LIST REGISTERED VESSELS
+================================================================================
+What is it in plain English?
+  A quick inventory check of all ships owned or managed by HarborFlow.
+
+Why do we need it?
+  To give port workers a clean, alphabetical list of all valid ships and their capacity.
+
+What the program does behind the scenes:
+  1. Opens the "vessels" folder.
+  2. Reads each ship file one by one.
+  3. Checks that required details are present (ID, Name, IMO, Capacity).
+  4. If a file is broken, corrupted, or missing a required field, it skips that file 
+     and counts it as "skipped".
+  5. Sorts all valid ships alphabetically by name (from A to Z).
+  6. Prints the sorted ships on the screen, followed by how many files were skipped.
+
+Example output:
+  Registered HarborFlow vessels:
+  - Baltic Pioneer | IMO 9312048 | 824 TEU
+  - Nordic Relay | IMO 9471155 | 1,120 TEU
+  - Skagerrak Star | IMO 9684207 | 1,460 TEU
+  Skipped vessel files: 1
+
+================================================================================
+TASK 2: INSPECT A VESSEL MANIFEST (CARGO PACKING SLIP)
+================================================================================
+What is it in plain English?
+  Checking what packages a specific ship is carrying on its next upcoming trip.
+
+Why do we need it?
+  When a ship is coming into harbor, workers need to know what cargo is on board, 
+  who owns each box, and how heavy the total cargo is.
+
+What the program asks the worker:
+  - Ship name (e.g., "Nordic Relay")
+  - Starting date (e.g., "2026-10-18")
+
+What the program does behind the scenes:
+  1. Finds the ship. If the ship doesn't exist, prints "Vessel not found."
+  2. Checks the schedule table to find the very next port visit on or after that date.
+  3. Finds the manifest (packing slip) for that visit.
+  4. Looks up every package listed on that packing slip in the "shipments" folder.
+  5. Adds up the total weight of all found packages.
+  6. If a package file is missing or lost, it prints "MISSING RECORD" and keeps going.
+  7. Shows a neat receipt with each package, the total weight, and how many were missing.
+
+================================================================================
+TASK 3: IDENTIFY PRIORITY CARGO (SORTING & URGENCY)
+================================================================================
+What is it in plain English?
+  Sorting packages into safety and urgency categories so dock workers know which 
+  boxes need special handling.
+
+Why do we need it?
+  You can't treat dangerous chemicals the same as regular clothing. Workers need 
+  clear labels on what needs a freezer, what needs hazardous handling, and what is rush.
+
+What the program asks the worker:
+  - A visit tracking code (Call ID, e.g., "HFL-GOT-2048").
+
+What the program does behind the scenes:
+  It examines each package on that visit's list and applies 4 rules in strict order:
+  Rule 1: Is it hazardous? -> Label as: CONTROLLED (Reason: hazardous cargo)
+  Rule 2: Does it need cold temperature? -> Label as: COLD CHAIN (Reason: refrigerated cargo)
+  Rule 3: Is it marked "EXPRESS" OR does it weigh 5,000 kg or more? 
+          -> Label as: EXPEDITE (Reason: express service or heavy weight)
+  Rule 4: Anything else? -> Label as: STANDARD (Reason: standard handling)
+
+Then, it prints each package with its label, followed by a total count of each category:
+  Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
+
+================================================================================
+TASK 4: EXPORT A CUSTOMER OPERATIONS PROFILE
+================================================================================
+What is it in plain English?
+  Generating a customer summary report and saving it into a spreadsheet file 
+  (CSV file) that managers can open in Excel.
+
+Why do we need it?
+  Account managers need a quick overview of how much business a customer is doing:
+  how many shipments they sent, total weight, express shipments, and all destinations.
+
+What the program asks the worker:
+  - Customer name (e.g., "Norra MedTech AB").
+
+What the program does behind the scenes:
+  1. Searches through all shipment files for that customer.
+  2. Calculates:
+     - Total number of packages.
+     - Total combined weight in kg (with 2 decimal places).
+     - How many packages were marked express.
+     - A list of all unique destination ports, sorted alphabetically and separated 
+       by '|' (for example: "CPH|GOT|OSL").
+  3. Opens or creates the file `exports/customer-profiles.csv`.
+  4. If this customer is already in the file, it updates their existing row.
+  5. If this customer is brand new, it adds a new row at the bottom.
+  6. It never duplicates rows or ruins other customers' data!
+
+================================================================================
+TASK 5: FIND PORT CALLS BY MONTH (DOCK SCHEDULE)
+================================================================================
+What is it in plain English?
+  Looking up the monthly calendar of ship arrivals.
+
+Why do we need it?
+  Berth and dock managers need to plan ahead for each month so they know which 
+  docks will be full and when ships will arrive.
+
+What the program asks the worker:
+  - A month number from 1 to 12 (e.g., typing '10' for October).
+
+What the program does behind the scenes:
+  1. Checks if the number is between 1 and 12. If not, asks again.
+  2. Scans the schedule file (`port_calls.csv`).
+  3. Filters out only the visits that happen in that chosen month.
+  4. Looks up the real ship name for each visit.
+  5. Sorts the list chronologically by arrival date, and then by ship name.
+  6. Prints the schedule clearly on screen (e.g., "18 October 2026 | Nordic Relay | GOT").
+
+================================================================================
+TASK 6: SANITIZE AN INCIDENT REPORT (PRIVACY & REDACTION)
+================================================================================
+What is it in plain English?
+  Blacking out (redacting) secret or private information from accident reports 
+  before sending them to insurance companies, the press, or external partners.
+
+Why do we need it?
+  To protect private email addresses, container numbers, and security seal codes.
+
+What the program asks the worker:
+  - Shows a numbered list of all incident reports, and asks the worker to pick a number.
+
+What the program does behind the scenes:
+  It reads the chosen report and uses text-matching patterns (regular expressions) 
+  to replace sensitive information:
+  - Container IDs (4 letters + 7 numbers, like "MSCU1234567") -> replaced with "[CONTAINER]"
+  - Security seal tags ("SEAL-" + 6 numbers, like "SEAL-884210") -> replaced with "[SEAL]"
+  - Email addresses (like "ops@harborflow.se") -> replaced with "[EMAIL]"
+
+Then, it saves the cleaned report into a new file: `exports/sanitized/<ID>-sanitized.txt`.
+If no secret information was found, it doesn't create an unnecessary file and tells 
+the user: "Incident contains no share-sensitive identifiers."
+
+================================================================================
+TASK 7: ANALYZE THE LONGEST STABLE EVENT SEQUENCE
+================================================================================
+What is it in plain English?
+  A quality-control check to find the longest smooth, uninterrupted streak of 
+  steps during a ship's journey.
+
+Why do we need it?
+  When a ship arrives, it goes through steps: GATE_IN, SCAN, WEIGH, LOAD, SEAL, DEPART.
+  If an event happens twice (for example: SCAN happens, and then SCAN happens again), 
+  it means there was a delay, re-inspection, or problem!
+  Managers want to measure operational stability by finding the longest continuous 
+  streak where every step was unique (no repeats).
+
+What the program does behind the scenes:
+  - Takes a list of event codes from the manifest.
+  - Uses a "sliding window" algorithm: it walks along the events, keeping track of 
+    the current sequence.
+  - The moment it sees a step it already saw, it slides the window past the first repeat.
+  - Finds the longest unique streak and prints it with arrows:
+    "Longest stable sequence length: 5"
+    "Sequence: WEIGH -> SCAN -> LOAD -> SEAL -> DEPART"
+
+================================================================================
+TASK 8: ASSESS WEATHER RISK FOR UPCOMING CALLS
+================================================================================
+What is it in plain English?
+  An automated storm and safety warning system.
+
+Why do we need it?
+  High winds can blow containers off cranes, tall waves make docking dangerous, 
+  and heavy rain ruins dry goods. Dock workers need clear safety instructions.
+
+What the program asks the worker:
+  - Ship name and a reference date (YYYY-MM-DD).
+
+What the program does behind the scenes:
+  1. Finds all upcoming port visits for that ship on or after that date.
+  2. For each visit, looks up the weather forecast for that port on that day in `weather.csv`.
+  3. Checks safety rules:
+     - Wind 45 km/h or higher: "Suspend crane operations."
+     - Waves 2.5 meters or higher: "Arrange tug assistance."
+     - Rain 8 mm or higher AND wind under 45 km/h: "Prepare covered handling."
+     - If weather is calm: "Normal operating plan."
+  4. Prints the weather readings and all applicable safety instructions together.
+
+================================================================================
+TASK 9: SEARCH INCIDENT REPORTS (MINI SEARCH ENGINE)
+================================================================================
+What is it in plain English?
+  A built-in search engine (like a mini-Google) for port accident reports.
+
+Why do we need it?
+  If a refrigerated container breaks today, a manager wants to quickly find every past 
+  report mentioning "freezer", "leak", or "delay" without opening dozens of files manually.
+
+What the program does behind the scenes:
+  1. "Inverted Index" (The Book Index):
+     Imagine the index at the back of a textbook. Instead of reading the whole book 
+     every time, you flip to the back, look up the word "reefer", and see a list of page 
+     numbers where that word appears.
+     The program creates this exact index for all words across all reports and saves it 
+     in a cache file (`dataset/incident-index.json`).
+  2. When the user types search words (like "reefer delay"):
+     - It looks up how many query words appear in each report.
+     - Reports with more matching words get a higher score.
+     - Prints the best matches at the top, ranked by score.
+  3. Fast and smart: On future runs, it re-uses the saved index so searches happen instantly!
+
+--------------------------------------------------------------------------------
+PART 4: CORE RULES TO REMEMBER (HOW TO PASS)
+--------------------------------------------------------------------------------
+
+1. ONE PASS GRADE (G / U):
+   Every single task (0 through 9) must work properly. There are no partial grades.
+
+2. NEVER CRASH:
+   If a file is missing, corrupted, or if the user types bad input, the program must 
+   show a polite error message and return safely to the menu. It must never show an 
+   ugly red Python crash screen.
+
+3. EXACT TEXT & SPELLING:
+   Automated grading (CodeGrade) checks exact words, spaces, and punctuation. 
+   Every prompt and message must match the specification exactly.
+
+4. NO THIRD-PARTY PACKAGES:
+   External libraries like 'pandas' or 'numpy' are forbidden. Only use Python's built-in 
+   tools (like `json`, `csv`, `re`, `datetime`, `pathlib`).
+
+5. RUNS FROM ONE PLACE:
+   The entire system starts by running `main.py` from the project root folder.
+
+================================================================================
+END OF GUIDE - YOU'VE GOT THIS!
+================================================================================
+
