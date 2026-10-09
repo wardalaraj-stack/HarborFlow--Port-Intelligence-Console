@@ -139,12 +139,13 @@ def _load_records(
             continue
 
         key = record[identifier]
-        if key in seen:
+        duplicate_key = key.casefold() if isinstance(key, str) else key
+        if duplicate_key in seen:
             diagnostics.append(
                 Diagnostic(str(path), "duplicate_identifier", f"duplicate {identifier} {key}")
             )
             continue
-        seen.add(key)
+        seen.add(duplicate_key)
         records.append(record)
 
     return LoadResult(records, diagnostics)
@@ -189,7 +190,7 @@ def load_port_calls(path: Path) -> LoadResult:
                 continue
 
             call_id = row["call_id"]
-            key = call_id
+            key = call_id.casefold()
             if key in seen:
                 diagnostics.append(
                     Diagnostic(source, "duplicate_identifier", f"duplicate call_id {call_id}")
