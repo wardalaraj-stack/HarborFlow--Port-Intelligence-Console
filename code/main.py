@@ -13,6 +13,7 @@ import csv
 
 import data_access
 import operations
+import text_tools
 
 # The menu text is stored once as a constant so it is printed exactly the
 # same way every time. Prompts and wording are part of the client contract,
@@ -156,7 +157,41 @@ def run_port_calls_by_month():
 
 def run_sanitize_incident():
     """Task 6: Sanitize an incident report."""
-    print("Service 6 not implemented yet.")  # TODO: replace
+    incidents, _skipped = data_access.load_incidents()
+    ordered = data_access.sort_incidents(incidents.values())
+
+    if not ordered:
+        print("No incident reports available.")
+        return
+
+    for number, incident in enumerate(ordered, start=1):
+        print(f"{number}. {incident['title']}")
+
+    while True:
+        try:
+            choice = int(input("Select incident: ").strip())
+            if 1 <= choice <= len(ordered):
+                break
+        except ValueError:
+            pass
+        print("Error - Select a listed incident.")
+
+    selected = ordered[choice - 1]
+    sanitized, changed = text_tools.sanitize_text(selected["report"])
+
+    if not changed:
+        print("Incident contains no share-sensitive identifiers.\n")
+        return
+
+    data_access.write_sanitized_report(
+        selected["incident_id"],
+        sanitized,
+        data_access.SANITIZED_DIR,
+    )
+    print(
+        "Sanitized report saved to "
+        f"exports/sanitized/{selected['incident_id']}-sanitized.txt.\n"
+    )
 
 
 def run_stable_sequence():

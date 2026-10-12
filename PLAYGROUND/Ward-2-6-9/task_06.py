@@ -32,7 +32,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # The "/" operator on Path objects joins paths — cleaner than os.path.join().
-DATASET_DIRECTORY = PROJECT_ROOT / "data" / "dataset"
+DATASET_DIRECTORY = PROJECT_ROOT / "dataset"
 INCIDENTS_DIRECTORY = DATASET_DIRECTORY / "incidents"
 
 # All sanitized output files land here. The service creates this directory

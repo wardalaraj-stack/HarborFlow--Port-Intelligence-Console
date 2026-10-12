@@ -115,3 +115,4 @@ def build_manifest_report(vessel, call, manifest, shipments):
 # ---------------------------------------------------------------------------
 #task_02 ends here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
+

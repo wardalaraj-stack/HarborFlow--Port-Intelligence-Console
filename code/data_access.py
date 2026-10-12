@@ -53,6 +53,8 @@ INCIDENT_FIELDS = ("incident_id", "call_id", "title", "report")
 PORT_CALL_COLUMNS = ("call_id", "vessel_id", "port_code", "arrival_date")
 WEATHER_COLUMNS = ("port_code", "date", "wind_kmh", "precipitation_mm", "wave_height_m")
 
+INCIDENTS_REQUIRED_FIELDS = ["incident_id", "call_id", "title", "report"]
+
 
 # ---------------------------------------------------------------------------
 # VALIDATION
@@ -68,6 +70,15 @@ def find_missing_fields(record, required_fields):
         if field not in record:
             missing.append(field)
     return missing
+
+def validate_incidents(record):
+    for field in INCIDENTS_REQUIRED_FIELDS:
+        if field not in record:
+            return f"{field} is missing"
+    value = record[field]
+    if not isinstance(value, str) or not value.strip():
+        return f"{field} must not be empty"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -222,3 +233,28 @@ def load_port_calls(path=PORT_CALLS_FILE):
 def load_weather(path=WEATHER_FILE):
     """Return (forecast rows, skipped rows) from weather.csv."""
     return load_csv_rows(path, WEATHER_COLUMNS)
+
+
+#------------------------------------------------------------------------------
+# Sorting
+#------------------------------------------------------------------------------
+
+def sort_incidents(incidents):
+    return sorted(incidents, key=lambda incident: incident["title"].casefold())
+
+
+
+#------------------------------------------------------------------------------
+#task_06 starts here - sanitization operations
+#------------------------------------------------------------------------------
+def write_sanitized_report(incident_id, sanitized_text, output_directory):
+    output_directory = Path(output_directory)
+    output_directory.mkdir(parents=True, exist_ok=True)
+    output_path = output_directory / f"{incident_id}-sanitized.txt"
+    with output_path.open("w", encoding="utf-8" , newline="") as handel:
+        handel.write(sanitized_text)
+    return output_path
+
+#------------------------------------------------------------------------------
+#task_06 ends here - sanitization operations
+#------------------------------------------------------------------------------
