@@ -150,9 +150,94 @@ def run_export_customer_profile():
     print("Service 4 not implemented yet.")  # TODO: replace
 
 
+#--------------------------------------------------------------------------------------
+# START Task 5  ------------------
+#--------------------------------------------------------------------------------------
+
 def run_port_calls_by_month():
-    """Task 5: Find port calls by month."""
-    print("Service 5 not implemented yet.")  # TODO: replace
+    """Ask for a month and display its valid port calls in sorted order."""
+
+    # Repeat only the month prompt until the input is valid.
+    valid_month = False
+
+    while not valid_month:
+        month_text = input("Month (1-12): ")
+
+        try:
+            month = int(month_text)
+        except ValueError:
+            print("Error - Enter a month from 1 to 12.")
+        else:
+            if 1 <= month <= 12:
+                valid_month = True
+            else:
+                print("Error - Enter a month from 1 to 12.")
+
+    # Load source data and handle expected file or parsing failures.
+    try:
+        records, issues = data_access.load_port_calls()
+
+        # The current vessel loader silently accepts a missing directory.
+        # Check it here so missing source data is reported explicitly.
+        if not data_access.VESSELS_DIR.is_dir():
+            raise FileNotFoundError("Vessel directory not found.")
+
+        vessel_by_id, vessel_issues = data_access.load_vessels()
+
+    except FileNotFoundError as error:
+        print("Port calls unavailable:", error)
+    except csv.Error:
+        print("Port calls unavailable: CSV could not be read.")
+    except ValueError as error:
+        print("Port calls unavailable:", error)
+    else:
+        # Loaders return diagnostics; this function displays them.
+        for line_number, reason in issues:
+            print(f"Skipped port_calls.csv line {line_number}: {reason}.")
+
+        for source_file, reason in vessel_issues:
+            print(f"Skipped vessel file {source_file}: {reason}.")
+
+        # Validate, resolve vessels, filter by month and sort the calls.
+        matching_calls, call_issues = operations.collect_month_calls(
+            month, records, vessel_by_id
+        )
+
+        for call_id, reason in call_issues:
+            print(f"Skipped port call {call_id}: {reason}.")
+
+        if not matching_calls:
+            print("No port calls found.")
+        else:
+            # Explicit English labels keep the report language consistent.
+            month_names = (
+                "January", "February", "March", "April",
+                "May", "June", "July", "August",
+                "September", "October", "November", "December"
+            )
+
+            # Tuple positions start at zero; month numbers start at one.
+            month_name = month_names[month - 1]
+            print(f"Port calls in {month_name}:")
+
+            for record in matching_calls:
+                call_date = record["call_date"]
+
+                # Task 5 requires a two-digit day, such as 02.
+                date_display = (
+                    f"{call_date.day:02d} "
+                    f"{month_names[call_date.month - 1]} "
+                    f"{call_date.year:04d}"
+                )
+
+                print(
+                    f"- {date_display} | {record['vessel_name']} | "
+                    f"{record['port_code']} | {record['call_id']}"
+                )
+
+#--------------------------------------------------------------------------------------
+# END of Task 5 ------------------
+#--------------------------------------------------------------------------------------
 
 
 def run_sanitize_incident():
