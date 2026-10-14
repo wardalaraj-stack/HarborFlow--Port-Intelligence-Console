@@ -26,3 +26,8 @@ def sanitize_text(text):
 ##################################################
 # Regex end
 ##################################################
+
+# Task 9 - Search Incident Reports | Implemented by Mado Sallom
+def normalize_words(text):
+    """Convert text into lowercase words without punctuation."""
+    return re.findall(r"\w+", text.lower())
