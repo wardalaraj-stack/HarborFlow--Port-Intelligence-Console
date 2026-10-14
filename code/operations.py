@@ -1,6 +1,7 @@
 """Pure business rules for HarborFlow services."""
-
+import data_access
 from datetime import date
+from text_tools import normalize_words
 
 # ---------------------------------------------------------------------------
 #task_02 starts here - Vessel and manifest operations 
@@ -301,3 +302,81 @@ def assess_weather_risk(vessel_name, reference_date, vessels, calls, weather_row
         "malformed_forecasts": malformed_forecasts,
         "reports": reports,
     }
+
+
+
+# --------------------------------------------------
+# Task 9: starts here
+# --------------------------------------------------
+# Task 9 - Search Incident Reports | Implemented by Mado Sallom
+def build_incident_index(incidents):
+
+    """Build an inverted word index and a title lookup."""
+    index = {}
+    titles = {}
+
+    for incident_id, incident in incidents.items():
+        titles[incident_id] = incident["title"]
+
+        words = set(normalize_words(incident["report"]))
+
+        for word in words:
+            if word not in index:
+                index[word] = []
+
+            index[word].append(incident_id)
+
+    sorted_index = {
+        word: sorted(index[word])
+        for word in sorted(index)
+    }
+
+    sorted_titles = {
+        incident_id: titles[incident_id]
+        for incident_id in sorted(titles)
+    }
+
+    return {
+        "index": sorted_index,
+        "titles": sorted_titles
+    }
+
+def search_incident_index(cache, query):
+
+    """Find incidents and rank them by distinct matching query words."""
+    query_words = set(normalize_words(query))
+    scores = {}
+
+    for word in query_words:
+        for incident_id in cache["index"].get(word, []):
+            scores[incident_id] = scores.get(incident_id, 0) + 1
+
+    ranked_ids = sorted(
+        scores,
+        key=lambda incident_id: (-scores[incident_id], incident_id)
+    )
+
+    results = []
+
+    for incident_id in ranked_ids:
+        results.append({
+            "incident_id": incident_id,
+            "title": cache["titles"][incident_id],
+            "score": scores[incident_id]
+        })
+
+    return results
+
+def get_incident_search_cache():
+    """Reuse a valid cache or rebuild it from incident reports."""
+    cache = data_access.load_incident_index()
+
+    if cache is not None:
+        return cache
+
+    incidents, skipped = data_access.load_incidents()
+
+    cache = build_incident_index(incidents)
+    data_access.save_incident_index(cache)
+
+    return cache
