@@ -124,7 +124,7 @@ def parse_call_date(arrival_date):
     """Validate a port-call date and return a Python date object."""
 
     # Reuse the existing date-format and calendar validation.
-    call_date = validate_reference_date(arrival_date)
+    call_date = parse_reference_date(arrival_date)
 
     return call_date
 
