@@ -30,3 +30,8 @@ Task 9,Reuse shared quote function,"distance 18, weight 12","calculate_quote cal
 Task 9,Invalid distance and weight,"distance 0 then -1 then 18; weight 0 then -1 then 12","required validation error and affected prompt repeats","required greater-than-zero errors printed; comparison completed",Abdalsalam Ward Alaraj,Passed,2026-09-30
 Task 9,Return to persistent menu,"complete comparison then select option 1","comparison returns to menu","menu displayed again and console closed through option 1",Abdalsalam Ward Alaraj,Passed,2026-09-30
 Task 2,validate_booking_reference,lower case reference,correcting lower case reference,corrected,Raydel,Running,2026-09-23
+"Assignment 2 - Task 4","Customer profile acceptance tests","Customer shipments and CSV export","Correct profile values and export behavior","2 automated acceptance tests passed","Mado Sallom","Passed","2026-10-14"
+"Assignment 2 - Task 8","Weather risk acceptance tests","Vessel calls and weather forecasts","Correct weather risk results","3 automated acceptance tests passed","Mado Sallom","Passed","2026-10-14"
+"Assignment 2 - Task 8","CLI edge cases","Missing vessel; no upcoming calls; data error; multiple calls","Correct messages and graceful error handling","4 automated tests passed","Mado Sallom","Passed","2026-10-14"
+"Assignment 2 - Task 8","Business logic tests","Call sorting; forecast lookup; invalid weather rows","Correct ordering; matching; invalid-row handling","3 automated tests passed","Mado Sallom","Passed","2026-10-14"
+"Assignment 2 - Task 9","Incident search automated tests","Incident search and cached index","Correct search behavior and index handling","14 tests passed on mado-task-9 branch; integration pending","Mado Sallom","Passed","2026-10-14"
