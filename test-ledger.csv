@@ -64,4 +64,25 @@ Task 5,Missing vessel directory,"Temporarily point VESSELS_DIR to a nonexistent 
 Task 5,Missing required CSV column,"Use temporary port_calls.csv without arrival_date; select month 10","Display missing-column error without crashing","Displayed Port calls unavailable: port_calls.csv is missing columns: arrival_date",Raydel Savón,Passed,2026-10-13
 Task 5,CSV parsing error,"Simulate csv.Error in load_port_calls; select month 10","Display CSV could not be read error without crashing","Displayed Port calls unavailable: CSV could not be read.; returned to Python prompt; original loader restored",Raydel Savón,Passed,2026-10-13
 Task 5,Menu recovery after CSV error,"Simulate csv.Error; run main menu; select service 5 and month 10; exit with 10","Display error and return to main menu without crashing","Displayed CSV error; returned to main menu; closed normally; original loader restored",Raydel Savón,Passed,2026-10-13
+Task 7,Longest stable sequence with repeated event,"Events: A B A C D","Length 4; sequence B A C D","Length 4; sequence B A C D",Raydel Savón,Passed,2026-10-14
+Task 7,Official HarborFlow stable sequence example,"Events: GATE_IN SCAN WEIGH SCAN LOAD SEAL DEPART","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART",Raydel Savón,Passed,2026-10-14
+Task 7,First occurrence wins on equal length,"Events: A B A B","Length 2; first sequence A B","Length 2; first sequence A B",Raydel Savón,Passed,2026-10-14
+Task 7,Empty event list,"Events: []","Length 0; empty sequence","Length 0; empty sequence",Raydel Savón,Passed,2026-10-14
+Task 7,Single event sequence,"Events: SCAN","Length 1; sequence SCAN","Length 1; sequence SCAN",Raydel Savón,Passed,2026-10-14
+Task 7,Repeated identical events,"Events: SCAN SCAN SCAN SCAN","Length 1; sequence SCAN","Length 1; sequence SCAN",Raydel Savón,Passed,2026-10-14
+Task 7,All unique events,"Events: GATE_IN SCAN WEIGH LOAD DEPART","Length 5; sequence GATE_IN SCAN WEIGH LOAD DEPART","Length 5; sequence GATE_IN SCAN WEIGH LOAD DEPART",Raydel Savón,Passed,2026-10-14
+Task 7,Previous occurrence outside current window,"Events: A B C B D A","Length 4; sequence C B D A","Length 4; sequence C B D A",Raydel Savón,Passed,2026-10-14
+Task 7,Manifest loader retrieves event codes,"Load manifests and access event_codes for HFL-GOT-2048","Return seven event codes in original order","Returned GATE_IN SCAN WEIGH SCAN LOAD SEAL DEPART in original order",Raydel Savón,Passed,2026-10-14
+Task 7,Manifest loader and algorithm integration,"Load HFL-GOT-2048 manifest and pass event_codes to longest_stable_sequence","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART",Raydel Savón,Passed,2026-10-14
+Task 7,Successful port call analysis via console,"Select service 7; enter HFL-GOT-2048","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART",Raydel Savón,Passed,2026-10-14
+Task 7,Unknown Call ID,"Select service 7; enter HFL-XXX-9999","Display Port call not found.","Displayed Port call not found.",Raydel Savón,Passed,2026-10-14
+Task 7,Menu recovery after unknown Call ID,"Select service 7; enter HFL-XXX-9999; return to menu","Display Port call not found. and return to main menu","Displayed Port call not found. and returned to main menu successfully",Raydel Savón,Passed,2026-10-14
+Task 7,Normal console exit after Task 7,"Complete Task 7 tests; select service 10","Close console normally with standard closing message","Console closed. HarborFlow operational data remains safe.",Raydel Savón,Passed,2026-10-14
+Task 7,Unavailable manifest and menu recovery,"Select service 7; enter HFL-BAD-9999","Display Manifest unavailable. and return to main menu","Displayed Manifest unavailable. and returned to main menu",Raydel Savón,Passed,2026-10-14
+Task 7,Lowercase Call ID normalization,"Select service 7; enter hfl-got-2048","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART; return to menu","Correct result displayed and returned to main menu",Raydel Savón,Passed,2026-10-14
+Task 7,Trailing whitespace normalization,"Select service 7; enter HFL-GOT-2048 with trailing space","Length 5; sequence WEIGH SCAN LOAD SEAL DEPART; return to menu","Correct result displayed and returned to main menu",Raydel Savón,Passed,2026-10-14
+Task 7,Manifest loader FileNotFoundError recovery,"Mock load_manifests to raise FileNotFoundError; enter HFL-GOT-2048","Display Manifest unavailable. and exit service without crashing","Displayed Manifest unavailable. and returned to PowerShell without traceback",Raydel Savón,Passed,2026-10-14
+Task 7,Port-call loader FileNotFoundError recovery,"Mock load_port_calls to raise FileNotFoundError; enter HFL-GOT-2048","Display loading error and exit service without crashing","Displayed Error - Simulated missing port calls file and returned to PowerShell without traceback",Raydel Savón,Passed,2026-10-14
+Task 7,Dataset preservation check,"Run git diff -- dataset/ after Task 7 tests","No unstaged changes to tracked dataset files","No output; no unstaged changes detected in tracked dataset files",Raydel Savón,Passed,2026-10-14
+
 

@@ -278,10 +278,70 @@ def run_sanitize_incident():
         f"exports/sanitized/{selected['incident_id']}-sanitized.txt.\n"
     )
 
+#--------------------------------------------------------------------------------------
+# START of Task 7 ------------------
+#--------------------------------------------------------------------------------------
 
 def run_stable_sequence():
-    """Task 7: Analyze the longest stable event sequence."""
-    print("Service 7 not implemented yet.")  # TODO: replace
+    """Task 7: Find the longest contiguous event sequence without repetitions."""
+
+    # Normalize the user's input to match stored Call IDs.
+    call_id = input("Call ID: ").strip().upper()
+
+    # Load port-call records and recover safely from data-loading errors.
+    try:
+        calls, skipped = data_access.load_port_calls()
+    except (FileNotFoundError, ValueError, csv.Error) as error:
+        print(f"Error - {error}")
+        return
+
+    # Find the port call requested by the user.
+    selected_call = None
+
+    for call in calls:
+        if call["call_id"] == call_id:
+            selected_call = call
+            break
+
+    # Stop this service if the Call ID does not exist.
+    if selected_call is None:
+        print("Port call not found.")
+        return
+
+    # Load manifests without allowing a file error to crash the console.
+    try:
+        manifests, skipped_manifests = data_access.load_manifests()
+    except (FileNotFoundError, ValueError, OSError):
+        print("Manifest unavailable.")
+        return
+
+    # Ensure that the manifest matches both the call ID and vessel ID.
+    manifest = operations.find_manifest(manifests, selected_call)
+
+    if manifest is None:
+        print("Manifest unavailable.")
+        return
+
+    # Verify that event_codes is a list containing only strings.
+    # An empty list is valid and produces a sequence of length zero.
+    event_codes = manifest["event_codes"]
+
+    if not isinstance(event_codes, list) or not all(
+        isinstance(event, str) for event in event_codes
+    ):
+        print("Manifest unavailable.")
+        return
+
+    # Execute the sliding-window algorithm implemented in text_tools.py.
+    length, sequence = text_tools.longest_stable_sequence(event_codes)
+
+    # Display the results in the format required by Task 7.
+    print(f"Longest stable sequence length: {length}")
+    print(f"Sequence: {' -> '.join(sequence)}")
+
+#--------------------------------------------------------------------------------------
+# END of Task 7 ------------------
+#--------------------------------------------------------------------------------------
 
 
 def run_weather_risk():
