@@ -162,17 +162,6 @@ def build_customer_profile(shipments, customer_name):
 # Task 8: Weather risk assessment
 # --------------------------------------------------
 
-def find_vessel_by_name(name, vessels):
-    """Find a vessel by display name, ignoring surrounding spaces and case."""
-    wanted = name.strip().casefold()
-
-    for vessel in vessels.values():
-        if vessel["name"].strip().casefold() == wanted:
-            return vessel
-
-    return None
-
-
 def select_upcoming_calls(calls, vessel_id, reference_date):
     """
     Return (qualifying_calls, invalid_rows).
