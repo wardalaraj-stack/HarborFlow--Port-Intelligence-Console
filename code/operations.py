@@ -115,4 +115,14 @@ def build_manifest_report(vessel, call, manifest, shipments):
 # ---------------------------------------------------------------------------
 #task_02 ends here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+#task_03 starts here - Vessel and manifest operations 
+#-----------------------------------------------------------------------
 
+"""
+SHP-1045 | EXPEDITE | express service
+SHP-1046 | CONTROLLED | hazardous cargo
+SHP-1067 | EXPEDITE | express service
+Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
+
+"""
