@@ -155,6 +155,7 @@ def load_json_collection(directory, required_fields, id_field):
 # the real dataset, while load_vessels(Path("some_test_folder")) reads a
 # different folder, which is useful for testing with broken files.
 
+
 def load_vessels(directory=VESSELS_DIR):
     """Return (vessels keyed by vessel_id, skipped files)."""
     return load_json_collection(directory, VESSEL_FIELDS, "vessel_id")
@@ -258,3 +259,4 @@ def write_sanitized_report(incident_id, sanitized_text, output_directory):
 #------------------------------------------------------------------------------
 #task_06 ends here - sanitization operations
 #------------------------------------------------------------------------------
+

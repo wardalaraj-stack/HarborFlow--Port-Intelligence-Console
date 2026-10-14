@@ -40,9 +40,30 @@ CLOSE_MESSAGE = "Console closed. HarborFlow operational data remains safe."
 # Keep the function names so the menu below keeps working.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Task 1: List Registered Vessels
+# ---------------------------------------------------------------------------
 def run_list_vessels():
+
     """Task 1: List registered vessels."""
-    print("Service 1 not implemented yet.")  # TODO: replace
+    # create variable that holds the tuple (dict, list)
+    vessel_tup = data_access.load_vessels(directory=data_access.VESSELS_DIR)
+    # unpack that tuple
+    dict_of_dict, skip_lst = vessel_tup
+    num_skipped_files = len(skip_lst)
+
+    print("Registered HarborFlow vessels:")
+    # print the correct vessel info - in alphabectical/sorted order
+    #lambda is the Python keyword for making a small function without a name, written in one line.
+    #reads as: “a function that takes vessel and returns vessel["name"].lower()
+    for vessel in sorted(dict_of_dict.values(), key=lambda vessel: vessel["name"].lower()):
+        vessel_name = vessel["name"]
+        imo_num = vessel["imo"]
+        capacity = vessel["capacity_teu"]
+        print(f"- {vessel_name} | IMO {imo_num} | {capacity:,} TEU")
+
+    # print the number of skipped files       
+    print(f"Skipped vessel files: {num_skipped_files}")
 
 # ---------------------------------------------------------------------------
 # Task 2: START Inspect a vessel manifest

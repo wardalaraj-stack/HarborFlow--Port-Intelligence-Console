@@ -16,7 +16,7 @@ def find_vessel_by_name(name, vessels):
     return None
 
 
-def validate_reference_date(value):
+def parse_reference_date(value):
     
     value = value.strip()
 
