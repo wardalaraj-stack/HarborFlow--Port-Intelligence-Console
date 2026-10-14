@@ -26,3 +26,28 @@ def sanitize_text(text):
 ##################################################
 # Regex end
 ##################################################
+
+##################################################
+# Task 7 - Longest stable event sequence
+##################################################
+
+def longest_stable_sequence(events):
+    last_seen = {}
+    left = 0
+    best_start = 0
+    best_length = 0
+
+    for right, event in enumerate(events):
+        if event in last_seen and last_seen[event] >= left:
+            left = last_seen[event] + 1
+
+        last_seen[event] = right
+
+        # Update the longest stable sequence if the current one is longer
+        current_length = right - left + 1
+
+        if current_length > best_length:
+            best_length = current_length
+            best_start = left
+
+    return best_length, events[best_start:best_start + best_length]
