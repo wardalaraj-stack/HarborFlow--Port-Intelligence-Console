@@ -105,7 +105,7 @@ def ask_reference_date():
     while True:
         value = input("Reference date (YYYY-MM-DD): ")
         try:
-            return operations.parse_reference_date(value)
+            return operations.validate_reference_date(value)
         except ValueError:
             print("Error - Date must use YYYY-MM-DD.")
 
@@ -145,9 +145,30 @@ def run_priority_cargo():
     print("Service 3 not implemented yet.")  # TODO: replace
 
 
+
 def run_export_customer_profile():
     """Task 4: Export a customer operations profile."""
-    print("Service 4 not implemented yet.")  # TODO: replace
+
+    try:
+        shipments, skipped = data_access.load_shipments()
+
+        customer_name = input("Customer name: ").strip()
+
+        profile = operations.build_customer_profile(
+            shipments, customer_name
+        )
+
+        if profile is None:
+            print("Customer not found.")
+            return
+
+        data_access.save_customer_profile(profile)
+
+    except (FileNotFoundError, ValueError, csv.Error, OSError) as error:
+        print(f"Error - {error}")
+        return
+
+    print("Customer profile updated: exports/customer-profiles.csv")
 
 
 def run_port_calls_by_month():
@@ -199,9 +220,64 @@ def run_stable_sequence():
     print("Service 7 not implemented yet.")  # TODO: replace
 
 
+
 def run_weather_risk():
     """Task 8: Assess weather risk for upcoming calls."""
-    print("Service 8 not implemented yet.")  # TODO: replace
+
+    vessel_name = input("Vessel name: ").strip()
+    date_text = input("Reference date (YYYY-MM-DD): ").strip()
+
+    try:
+        reference_date = operations.validate_reference_date(date_text)
+    except ValueError:
+        print("Invalid date. Use YYYY-MM-DD.")
+        return
+
+    try:
+        vessels, skipped_vessels = data_access.load_vessels()
+        calls, skipped_calls = data_access.load_port_calls()
+        weather, skipped_weather = data_access.load_weather()
+
+        result = operations.assess_weather_risk(
+            vessel_name,
+            reference_date,
+            vessels,
+            calls,
+            weather
+        )
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Error assessing weather risk: {error}")
+        return
+
+    if result["status"] == "vessel_not_found":
+        print("Vessel not found.")
+        return
+
+    if result["status"] == "no_upcoming_calls":
+        print("No upcoming port calls found.")
+        return
+
+    for report in result["reports"]:
+        call = report["call"]
+
+        print("\nPort call:", call["call_id"])
+        print("Port:", call["port_code"])
+        print("Arrival date:", call["arrival_date"])
+
+        forecast = report["forecast"]
+
+        if forecast is None:
+            print("Weather forecast unavailable.")
+            continue
+
+        print("Wind (km/h):", forecast["wind_kmh"])
+        print("Rain (mm):", forecast["precipitation_mm"])
+        print("Waves (m):", forecast["wave_height_m"])
+
+        print("Safety recommendations:")
+        for recommendation in report["recommendations"]:
+            print("-", recommendation)
+
 
 
 def run_search_incidents():

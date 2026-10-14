@@ -243,6 +243,75 @@ def sort_incidents(incidents):
     return sorted(incidents, key=lambda incident: incident["title"].casefold())
 
 
+# --------------------------------------------------
+# Task 4 starts here: Save or update customer profile
+# --------------------------------------------------
+
+def save_customer_profile(profile, path=CUSTOMER_PROFILES_FILE):
+    """Create or update one customer row in the CSV file."""
+    columns = [
+        "customer",
+        "shipment_count",
+        "total_weight_kg",
+        "express_count",
+        "destinations",
+    ]
+
+    rows = []
+
+    if path.exists():
+        with open(path, "r", encoding="utf-8", newline="") as file:
+            reader = csv.DictReader(file)
+
+            if reader.fieldnames != columns:
+                raise ValueError("Invalid customer profile CSV header")
+
+            rows = list(reader)
+
+    updated = False
+    result_rows = []
+
+    for row in rows:
+        if row["customer"].strip().casefold() == profile["customer"].strip().casefold():
+            if not updated:
+                result_rows.append(profile)
+                updated = True
+        else:
+            result_rows.append(row)
+
+    if not updated:
+        result_rows.append(profile)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Prepare the new content before replacing the original file.
+    import os
+    import tempfile
+
+    temporary_path = None
+
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="",
+            dir=path.parent,
+            suffix=".tmp",
+            delete=False,
+        ) as file:
+            temporary_path = file.name
+            writer = csv.DictWriter(file, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(result_rows)
+
+        os.replace(temporary_path, path)
+
+    finally:
+        if temporary_path is not None and os.path.exists(temporary_path):
+            os.unlink(temporary_path)
+# --------------------------------------------------
+# Task 4 ends here: Save or update customer profile
+# --------------------------------------------------
 
 #------------------------------------------------------------------------------
 #task_06 starts here - sanitization operations
