@@ -225,14 +225,16 @@ def run_weather_risk():
     """Task 8: Assess weather risk for upcoming calls."""
 
     vessel_name = input("Vessel name: ").strip()
-    date_text = input("Reference date (YYYY-MM-DD): ").strip()
 
-    try:
-        reference_date = operations.validate_reference_date(date_text)
-    except ValueError:
-        print("Invalid date. Use YYYY-MM-DD.")
-        return
+    # Keep asking for the date until the input is valid.
+    while True:
+        date_text = input("Reference date (YYYY-MM-DD): ").strip()
 
+        try:
+            reference_date = operations.validate_reference_date(date_text)
+            break
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD.")
     try:
         vessels, skipped_vessels = data_access.load_vessels()
         calls, skipped_calls = data_access.load_port_calls()
@@ -267,7 +269,7 @@ def run_weather_risk():
         forecast = report["forecast"]
 
         if forecast is None:
-            print("Weather forecast unavailable.")
+            print("Forecast unavailable.")
             continue
 
         print("Wind (km/h):", forecast["wind_kmh"])
