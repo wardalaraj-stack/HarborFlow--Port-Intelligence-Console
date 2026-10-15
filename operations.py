@@ -16,7 +16,7 @@ def find_vessel_by_name(name, vessels):
     return None
 
 
-def validate_reference_date(value):
+def parse_reference_date(value):
     
     value = value.strip()
 
@@ -116,13 +116,84 @@ def build_manifest_report(vessel, call, manifest, shipments):
 #task_02 ends here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
 # ---------------------------------------------------------------------------
-#task_03 starts here - Vessel and manifest operations 
+#task_03 starts here - Identify Priority Cargo
 #-----------------------------------------------------------------------
 
 """
+What the output should look like:
+
+ship_id, categorization (first shown), ?????
+then Category totals...etc etc (list them all even if 0)
+
 SHP-1045 | EXPEDITE | express service
 SHP-1046 | CONTROLLED | hazardous cargo
 SHP-1067 | EXPEDITE | express service
 Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
 
 """
+
+# ---------------------------------------------------------------------------
+#task_03 ends here - Identify Priority Cargo
+#-----------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Task 5 Start here - Find port calls by month
+# ---------------------------------------------------------------------------
+
+def parse_call_date(arrival_date):
+    """Validate a port-call date and return a Python date object."""
+
+    # Reuse the existing date-format and calendar validation.
+    call_date = parse_reference_date(arrival_date)
+
+    return call_date
+
+def collect_month_calls(month, records, vessel_by_id):
+    """Return calls for the selected month and problems with rejected rows."""
+
+    matching_calls = []
+    issues = []
+
+    for record in records:
+        try:
+            call_date = parse_call_date(record["arrival_date"])
+        except ValueError:
+            # Reject invalid dates without stopping later rows.
+            issues.append(
+                (record["call_id"],
+                 f"invalid arrival_date '{record['arrival_date']}'")
+            )
+        else:
+            vessel_id = record["vessel_id"]
+
+            if vessel_id not in vessel_by_id:
+                # A call must refer to a known vessel.
+                issues.append(
+                    (record["call_id"],
+                     f"unknown vessel_id '{vessel_id}'")
+                )
+            else:
+                vessel = vessel_by_id[vessel_id]
+
+                # Match the selected month, regardless of the year.
+                if call_date.month == month:
+                    matching_calls.append({
+                        "call_date": call_date,
+                        "vessel_name": vessel["name"],
+                        "port_code": record["port_code"],
+                        "call_id": record["call_id"],
+                    })
+
+    # Sort by date, then vessel name; call ID resolves remaining ties.
+    matching_calls.sort(
+        key=lambda record: (
+            record["call_date"],
+            record["vessel_name"].casefold(),
+            record["call_id"],
+        )
+    )
+
+    return matching_calls, issues
+
+# ---------------------------------------------------------------------------
+# Task 5 ends here - Find port calls by month
+# ---------------------------------------------------------------------------

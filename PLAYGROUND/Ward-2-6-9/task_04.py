@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Start from this file, walk back to the ass2 folder, then reach the dataset.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATASET_DIRECTORY = PROJECT_ROOT / "data" / "dataset"
+DATASET_DIRECTORY = PROJECT_ROOT / "dataset" 
 SHIPMENTS_DIRECTORY = DATASET_DIRECTORY / "shipments"
 EXPORTS_DIRECTORY = PROJECT_ROOT / "exports"
 CUSTOMER_PROFILE_PATH = EXPORTS_DIRECTORY / "customer-profiles.csv"
