@@ -1,7 +1,6 @@
 """Pure business rules for HarborFlow services."""
 
 from datetime import date
-import data_access
 
 
 # ---------------------------------------------------------------------------
@@ -121,39 +120,52 @@ def build_manifest_report(vessel, call, manifest, shipments):
 #task_03 starts here - Identify Priority Cargo
 #-----------------------------------------------------------------------
 
-def run_priority_cargo():
+def find_shipment_ids(call, call_id, ship_ids):
+    id_lst = call[call_id]["shipment_ids"]
+    control_count = 0
+    cc_count = 0
+    exp_count = 0
+    stan_count = 0
+    shipment_tracker = []
+    for id in id_lst:
+        if id in ship_ids:
+            category, reason = ship_classification(ship_ids[id])
+            if category == "CONTROLLED":
+                control_count += 1
+            if category == "COLD CHAIN":
+                cc_count += 1
+            if category == "EXPEDITE":
+                exp_count += 1
+            if category == "STANDARD":
+                stan_count += 1
+            shipment_tracker.append((id, category, reason))
+        else: 
+            print("Shipment_id not found")
+            # TODO: Brief gives no message for a missing shipment in Task 3.
+            # "Classify every resolved shipment" suggests skipping it silently.
+            # Check with teacher - an extra printed line could fail CodeGrade.
+    return shipment_tracker, control_count, cc_count, exp_count, stan_count
 
-    call_id = input("Enter call_id: ").strip().upper()
-    #take that call id and find the relevent shipment ids
-    find_shipment_ids(call_id)
+    
+def ship_classification(ship_id):
+    # for each shipment_id - it sets a category for that shipment_id
+    if ship_id["hazardous"] == True :
+        category = "CONTROLLED"
+        reason = "hazardous cargo"
+    elif ship_id["temperature_controlled"] == True:
+        category = "COLD CHAIN"
+        reason = "temperature controlled"
+    elif ship_id["priority"] == "EXPRESS":
+        category = "EXPEDITE"
+        reason = "express service"
+    elif ship_id["weight_kg"] >= 5000:
+        category = "EXPEDITE"
+        reason = "heavy cargo"
+    else:
+        category = "STANDARD"
+        reason = "standard handling"
 
-def find_shipment_ids(call_id):
-    manifest_tup = data_access.load_manifests(directory=data_access.MANIFESTS_DIR)
-    #unpack that tuple
-    call, fields = manifest_tup
-    shipment_lst = []
-    #call is a dict of dicts by call_id
-    for i in call.values():
-        if call_id == i["call_id"]:
-            for id in i["shipment_ids"]:
-                shipment_lst.append(id)
-
-    print(shipment_lst)
-
-
-
-"""
-What the output should look like:
-
-ship_id, categorization (first shown), ?????
-then Category totals...etc etc (list them all even if 0)
-
-SHP-1045 | EXPEDITE | express service
-SHP-1046 | CONTROLLED | hazardous cargo
-SHP-1067 | EXPEDITE | express service
-Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0
-
-"""
+    return category, reason
 
 # ---------------------------------------------------------------------------
 #task_03 ends here - Identify Priority Cargo

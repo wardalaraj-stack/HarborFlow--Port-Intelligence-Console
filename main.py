@@ -209,12 +209,22 @@ def print_manifest_report(report):
 #-----------------------------------------------------------------------
 def run_priority_cargo():
 
-    """Task 3: Identify priority cargo."""
+    manifest_tup = data_access.load_manifests(directory=data_access.MANIFESTS_DIR)
+    #unpack that tuple
+    call, skipped_manifests = manifest_tup
+
+    shipment_tup = data_access.load_shipments(directory=data_access.SHIPMENTS_DIR)
+    ship_ids, skipped_shipments = shipment_tup
+
     call_id = input("Enter call_id: ").strip().upper()
 
-    #take that call id and find the relevent shipment ids
-    operations.find_shipment_ids(call_id)
-    #print("Service 3 not implemented yet.")  # TODO: replace
+    if call_id in call:
+        shipment_tracker, control_count, cc_count, exp_count, stan_count = operations.find_shipment_ids(call, call_id, ship_ids)
+        for ship_id, category, reason in shipment_tracker:
+            print(f"{ship_id} | {category} | {reason}")
+        print(f"Category totals: CONTROLLED={control_count}, COLD CHAIN={cc_count}, EXPEDITE={exp_count}, STANDARD={stan_count}")
+    else:
+            print("Manifest unavailable")
 
 # ---------------------------------------------------------------------------
 #task_03 ends here - Identify Priority Cargo
