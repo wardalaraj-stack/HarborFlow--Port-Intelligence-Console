@@ -173,21 +173,21 @@ def select_upcoming_calls(calls, vessel_id, reference_date):
     invalid_rows = []
 
     for line_number, call in enumerate(calls, start=2):
-        if call["vessel_id"] != vessel_id:
-            continue
-
         try:
             arrival = date.fromisoformat(call["arrival_date"])
         except ValueError:
             invalid_rows.append((line_number, call["arrival_date"]))
             continue
 
+        if call["vessel_id"] != vessel_id:
+            continue
+
         if arrival >= reference_date:
             qualifying.append((arrival, call["call_id"], call))
 
     qualifying.sort(key=lambda item: (item[0], item[1]))
-    return [item[2] for item in qualifying], invalid_rows
 
+    return [item[2] for item in qualifying], invalid_rows
 
 def build_weather_lookup(weather_rows):
     """

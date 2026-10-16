@@ -168,7 +168,27 @@ def run_priority_cargo():
 
 def run_export_customer_profile():
     """Task 4: Export a customer operations profile."""
-    print("Service 4 not implemented yet.")  # TODO: replace
+
+    try:
+        shipments, skipped = data_access.load_shipments()
+
+        customer_name = input("Customer name: ").strip()
+
+        profile = operations.build_customer_profile(
+            shipments, customer_name
+        )
+
+        if profile is None:
+            print("Customer not found.")
+            return
+
+        data_access.save_customer_profile(profile)
+
+    except (FileNotFoundError, ValueError, csv.Error, OSError) as error:
+        print(f"Error - {error}")
+        return
+
+    print("Customer profile updated: exports/customer-profiles.csv")
 
 
 #--------------------------------------------------------------------------------------
@@ -367,7 +387,77 @@ def run_stable_sequence():
 
 def run_weather_risk():
     """Task 8: Assess weather risk for upcoming calls."""
-    print("Service 8 not implemented yet.")  # TODO: replace
+
+    vessel_name = input("Vessel name: ").strip()
+
+    while True:
+        date_text = input("Reference date (YYYY-MM-DD): ").strip()
+
+        try:
+            reference_date = operations.parse_reference_date(date_text)
+            break
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD.")
+
+    try:
+        vessels, skipped_vessels = data_access.load_vessels()
+        calls, skipped_calls = data_access.load_port_calls()
+        weather, skipped_weather = data_access.load_weather()
+
+        result = operations.assess_weather_risk(
+            vessel_name,
+            reference_date,
+            vessels,
+            calls,
+            weather
+        )
+
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Error assessing weather risk: {error}")
+        return
+
+    if result["status"] == "vessel_not_found":
+        print("Vessel not found.")
+        return
+
+    if result["status"] == "no_upcoming_calls":
+        print("No upcoming port calls found.")
+        return
+
+    for report in result["reports"]:
+        call = report["call"]
+
+        arrival_date = operations.parse_reference_date(
+            call["arrival_date"]
+        )
+
+        date_display = (
+            f"{arrival_date.day} "
+            f"{arrival_date.strftime('%B %Y')}"
+        )
+
+        print(
+            f"\n{vessel_name} | "
+            f"{call['port_code']} | "
+            f"{date_display}"
+        )
+
+        forecast = report["forecast"]
+
+        if forecast is None:
+            print("Forecast unavailable.")
+            continue
+
+        print(
+            f"Wind: {forecast['wind_kmh']:.1f} km/h | "
+            f"Rain: {forecast['precipitation_mm']:.1f} mm | "
+            f"Waves: {forecast['wave_height_m']:.1f} m"
+        )
+
+        print(
+            "Recommendation: "
+            + " ".join(report["recommendations"])
+        )
 
 
 def run_search_incidents():
