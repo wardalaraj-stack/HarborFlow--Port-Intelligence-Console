@@ -170,65 +170,199 @@ def ship_classification(ship_id):
 # ---------------------------------------------------------------------------
 #task_03 ends here - Identify Priority Cargo
 #-----------------------------------------------------------------------
+
 # ---------------------------------------------------------------------------
 # Task 5 Start here - Find port calls by month
 # ---------------------------------------------------------------------------
 
-def parse_call_date(arrival_date):
-    """Validate a port-call date and return a Python date object."""
-
-    # Reuse the existing date-format and calendar validation.
-    call_date = parse_reference_date(arrival_date)
-
-    return call_date
-
-def collect_month_calls(month, records, vessel_by_id):
-    """Return calls for the selected month and problems with rejected rows."""
-
-    matching_calls = []
-    issues = []
-
-    for record in records:
-        try:
-            call_date = parse_call_date(record["arrival_date"])
-        except ValueError:
-            # Reject invalid dates without stopping later rows.
-            issues.append(
-                (record["call_id"],
-                 f"invalid arrival_date '{record['arrival_date']}'")
-            )
-        else:
-            vessel_id = record["vessel_id"]
-
-            if vessel_id not in vessel_by_id:
-                # A call must refer to a known vessel.
-                issues.append(
-                    (record["call_id"],
-                     f"unknown vessel_id '{vessel_id}'")
-                )
-            else:
-                vessel = vessel_by_id[vessel_id]
-
-                # Match the selected month, regardless of the year.
-                if call_date.month == month:
-                    matching_calls.append({
-                        "call_date": call_date,
-                        "vessel_name": vessel["name"],
-                        "port_code": record["port_code"],
-                        "call_id": record["call_id"],
-                    })
-
-    # Sort by date, then vessel name; call ID resolves remaining ties.
-    matching_calls.sort(
-        key=lambda record: (
-            record["call_date"],
-            record["vessel_name"].casefold(),
-            record["call_id"],
-        )
-    )
-
-    return matching_calls, issues
+# WHERE IS TASK 5 ?
 
 # ---------------------------------------------------------------------------
 # Task 5 ends here - Find port calls by month
 # ---------------------------------------------------------------------------
+
+# --------------------------------------------------
+# Task 4: Customer operations profile
+# --------------------------------------------------
+
+def build_customer_profile(shipments, customer_name):
+    target = customer_name.strip().casefold()
+
+    matching = []
+
+    for shipment in shipments.values():
+        if shipment["customer"].strip().casefold() == target:
+            matching.append(shipment)
+
+    if not matching:
+        return None
+
+    total_weight = 0.0
+    express_count = 0
+    destinations = set()
+
+    for shipment in matching:
+        total_weight += float(shipment["weight_kg"])
+
+        if shipment["priority"].strip().upper() == "EXPRESS":
+            express_count += 1
+
+        destinations.add(shipment["destination"])
+
+    return {
+        "customer": matching[0]["customer"],
+        "shipment_count": len(matching),
+        "total_weight_kg": f"{total_weight:.2f}",
+        "express_count": express_count,
+        "destinations": "|".join(sorted(destinations)),
+    }
+
+# --------------------------------------------------
+# Task 4: END
+# --------------------------------------------------
+
+
+
+# --------------------------------------------------
+# Task 8: Weather risk assessment
+# --------------------------------------------------
+
+def select_upcoming_calls(calls, vessel_id, reference_date):
+    """
+    Return (qualifying_calls, invalid_rows).
+
+    qualifying_calls is sorted by arrival date, then call_id.
+    invalid_rows contains (line_number, arrival_date) for invalid call dates.
+    """
+    qualifying = []
+    invalid_rows = []
+
+    for line_number, call in enumerate(calls, start=2):
+        if call["vessel_id"] != vessel_id:
+            continue
+
+        try:
+            arrival = date.fromisoformat(call["arrival_date"])
+        except ValueError:
+            invalid_rows.append((line_number, call["arrival_date"]))
+            continue
+
+        if arrival >= reference_date:
+            qualifying.append((arrival, call["call_id"], call))
+
+    qualifying.sort(key=lambda item: (item[0], item[1]))
+    return [item[2] for item in qualifying], invalid_rows
+
+
+def build_weather_lookup(weather_rows):
+    """
+    Return (lookup, malformed_rows).
+
+    A valid forecast is keyed by (port_code, date).
+    Malformed numeric rows are reported and skipped.
+    """
+    lookup = {}
+    malformed_rows = []
+
+    for line_number, row in enumerate(weather_rows, start=2):
+        try:
+            wind = float(row["wind_kmh"])
+            rain = float(row["precipitation_mm"])
+            waves = float(row["wave_height_m"])
+        except ValueError:
+            malformed_rows.append((line_number, row))
+            continue
+
+        key = (row["port_code"], row["date"])
+
+        if key not in lookup:
+            lookup[key] = {
+                "wind_kmh": wind,
+                "precipitation_mm": rain,
+                "wave_height_m": waves,
+            }
+
+    return lookup, malformed_rows
+
+
+def weather_recommendations(wind_kmh, precipitation_mm, wave_height_m):
+    """Return every recommendation whose condition is true, in table order."""
+    recommendations = []
+
+    if wind_kmh >= 45:
+        recommendations.append("Suspend crane operations.")
+
+    if wave_height_m >= 2.5:
+        recommendations.append("Arrange tug assistance.")
+
+    if precipitation_mm >= 8 and wind_kmh < 45:
+        recommendations.append("Prepare covered handling.")
+
+    if not recommendations:
+        recommendations.append("Normal operating plan.")
+
+    return recommendations
+
+
+def assess_weather_risk(vessel_name, reference_date, vessels, calls, weather_rows):
+    """
+    Build Task 8 results without printing.
+
+    Returns a dictionary with status, invalid/malformed diagnostics, and reports.
+    """
+    vessel = find_vessel_by_name(vessel_name, vessels)
+
+    if vessel is None:
+        return {
+            "status": "vessel_not_found",
+            "invalid_calls": [],
+            "malformed_forecasts": [],
+            "reports": [],
+        }
+
+    upcoming, invalid_calls = select_upcoming_calls(
+        calls,
+        vessel["vessel_id"],
+        reference_date,
+    )
+
+    if not upcoming:
+        return {
+            "status": "no_upcoming_calls",
+            "invalid_calls": invalid_calls,
+            "malformed_forecasts": [],
+            "reports": [],
+        }
+
+    weather_lookup, malformed_forecasts = build_weather_lookup(weather_rows)
+    reports = []
+
+    for call in upcoming:
+        forecast = weather_lookup.get((call["port_code"], call["arrival_date"]))
+
+        if forecast is None:
+            reports.append({
+                "call": call,
+                "forecast": None,
+                "recommendations": [],
+            })
+            continue
+
+        recommendations = weather_recommendations(
+            forecast["wind_kmh"],
+            forecast["precipitation_mm"],
+            forecast["wave_height_m"],
+        )
+
+        reports.append({
+            "call": call,
+            "forecast": forecast,
+            "recommendations": recommendations,
+        })
+
+    return {
+        "status": "ok",
+        "invalid_calls": invalid_calls,
+        "malformed_forecasts": malformed_forecasts,
+        "reports": reports,
+    }
