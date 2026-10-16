@@ -1,6 +1,8 @@
 """Pure business rules for HarborFlow services."""
 
 from datetime import date
+import data_access
+
 
 # ---------------------------------------------------------------------------
 #task_02 starts here - Vessel and manifest operations 
@@ -118,6 +120,27 @@ def build_manifest_report(vessel, call, manifest, shipments):
 # ---------------------------------------------------------------------------
 #task_03 starts here - Identify Priority Cargo
 #-----------------------------------------------------------------------
+
+def run_priority_cargo():
+
+    call_id = input("Enter call_id: ").strip().upper()
+    #take that call id and find the relevent shipment ids
+    find_shipment_ids(call_id)
+
+def find_shipment_ids(call_id):
+    manifest_tup = data_access.load_manifests(directory=data_access.MANIFESTS_DIR)
+    #unpack that tuple
+    call, fields = manifest_tup
+    shipment_lst = []
+    #call is a dict of dicts by call_id
+    for i in call.values():
+        if call_id == i["call_id"]:
+            for id in i["shipment_ids"]:
+                shipment_lst.append(id)
+
+    print(shipment_lst)
+
+
 
 """
 What the output should look like:

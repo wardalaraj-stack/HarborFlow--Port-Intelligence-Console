@@ -204,10 +204,21 @@ def print_manifest_report(report):
 # Task 2: END
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+#task_03 starts here - Identify Priority Cargo
+#-----------------------------------------------------------------------
 def run_priority_cargo():
-    """Task 3: Identify priority cargo."""
-    print("Service 3 not implemented yet.")  # TODO: replace
 
+    """Task 3: Identify priority cargo."""
+    call_id = input("Enter call_id: ").strip().upper()
+
+    #take that call id and find the relevent shipment ids
+    operations.find_shipment_ids(call_id)
+    #print("Service 3 not implemented yet.")  # TODO: replace
+
+# ---------------------------------------------------------------------------
+#task_03 ends here - Identify Priority Cargo
+#-----------------------------------------------------------------------
 
 def run_export_customer_profile():
     """Task 4: Export a customer operations profile."""
