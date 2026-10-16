@@ -115,9 +115,47 @@ def build_manifest_report(vessel, call, manifest, shipments):
 # ---------------------------------------------------------------------------
 #task_02 ends here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
+# --------------------------------------------------
+# Task_4 starts here: Customer operations profile
+# --------------------------------------------------
+
+def build_customer_profile(shipments, customer_name):
+    target = customer_name.strip().casefold()
+
+    matching = []
+
+    for shipment in shipments.values():
+        if shipment["customer"].strip().casefold() == target:
+            matching.append(shipment)
+
+    if not matching:
+        return None
+
+    total_weight = 0.0
+    express_count = 0
+    destinations = set()
+
+    for shipment in matching:
+        total_weight += float(shipment["weight_kg"])
+
+        if shipment["priority"].strip().upper() == "EXPRESS":
+            express_count += 1
+
+        destinations.add(shipment["destination"])
+
+    return {
+        "customer": matching[0]["customer"],
+        "shipment_count": len(matching),
+        "total_weight_kg": f"{total_weight:.2f}",
+        "express_count": express_count,
+        "destinations": "|".join(sorted(destinations)),
+    }
+# --------------------------------------------------
+# Task_4 ends here: Customer operations profile
+# --------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# Task 5 Start here - Find port calls by month
+# Task_5 starts here - Find port calls by month
 # ---------------------------------------------------------------------------
 
 def parse_call_date(arrival_date):
