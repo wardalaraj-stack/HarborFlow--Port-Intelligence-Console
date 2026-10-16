@@ -43,19 +43,13 @@ CLOSE_MESSAGE = "Console closed. HarborFlow operational data remains safe."
 # ---------------------------------------------------------------------------
 # Task 1: List Registered Vessels
 # ---------------------------------------------------------------------------
-def run_list_vessels():
 
-    """Task 1: List registered vessels."""
-    # create variable that holds the tuple (dict, list)
-    vessel_tup = data_access.load_vessels(directory=data_access.VESSELS_DIR)
-    # unpack that tuple
-    dict_of_dict, skip_lst = vessel_tup
+def print_vessel_list(dict_of_dict, skip_lst):
+    """Print the registered vessel list from already-loaded data (used by Task 1 and Task 2)."""
+
     num_skipped_files = len(skip_lst)
-
     print("Registered HarborFlow vessels:")
-    # print the correct vessel info - in alphabectical/sorted order
-    #lambda is the Python keyword for making a small function without a name, written in one line.
-    #reads as: “a function that takes vessel and returns vessel["name"].lower()
+    
     for vessel in sorted(dict_of_dict.values(), key=lambda vessel: vessel["name"].lower()):
         vessel_name = vessel["name"]
         imo_num = vessel["imo"]
@@ -65,9 +59,43 @@ def run_list_vessels():
     # print the number of skipped files       
     print(f"Skipped vessel files: {num_skipped_files}")
 
+
+def run_list_vessels():
+    """Task 1: List registered vessels."""
+    # create variable that holds the tuple (dict, list)
+    vessel_tup = data_access.load_vessels(directory=data_access.VESSELS_DIR)
+    # unpack that tuple
+    dict_of_dict, skip_lst = vessel_tup
+
+    # hand the loaded data to the printing function
+    print_vessel_list(dict_of_dict, skip_lst)
+
+# def run_list_vessels():
+
+#     """Task 1: List registered vessels."""
+#     # create variable that holds the tuple (dict, list)
+#     vessel_tup = data_access.load_vessels(directory=data_access.VESSELS_DIR)
+#     # unpack that tuple
+#     dict_of_dict, skip_lst = vessel_tup
+#     num_skipped_files = len(skip_lst)
+
+#     print("Registered HarborFlow vessels:")
+#     # print the correct vessel info - in alphabectical/sorted order
+#     #lambda is the Python keyword for making a small function without a name, written in one line.
+#     #reads as: “a function that takes vessel and returns vessel["name"].lower()
+#     for vessel in sorted(dict_of_dict.values(), key=lambda vessel: vessel["name"].lower()):
+#         vessel_name = vessel["name"]
+#         imo_num = vessel["imo"]
+#         capacity = vessel["capacity_teu"]
+#         print(f"- {vessel_name} | IMO {imo_num} | {capacity:,} TEU")
+
+#     # print the number of skipped files       
+#     print(f"Skipped vessel files: {num_skipped_files}")
+
 # ---------------------------------------------------------------------------
 # Task 2: START Inspect a vessel manifest
 # ---------------------------------------------------------------------------
+
 def run_inspect_manifest():
     try:
         vessels, vessel_problems = data_access.load_vessels()
@@ -78,18 +106,33 @@ def run_inspect_manifest():
         print(f"Error - {error}")
         return
 
-    print("Registered HarborFlow vessels:")
-    for vessel in vessels.values():
-        print("\n"
-            f"- {vessel['name']} | IMO {vessel['imo']} | "
-            f"{vessel['capacity_teu']:,} TEU"
-        )
-    for filename, reason in vessel_problems:
-        print("\n"
-            f"Skipped {filename}: {reason}")
-    print(f"Skipped vessel files: {len(vessel_problems)}\n")
+    # reuse Task 1's printing with the data already loaded above (no second file read)
+    print_vessel_list(vessels, vessel_problems)
 
     vessel_name = input("Vessel name: ")
+
+# def run_inspect_manifest():
+#     try:
+#         vessels, vessel_problems = data_access.load_vessels()
+#         calls, _ = data_access.load_port_calls()
+#         manifests, _ = data_access.load_manifests()
+#         shipments, _ = data_access.load_shipments()
+#     except (FileNotFoundError, ValueError, csv.Error) as error:
+#         print(f"Error - {error}")
+#         return
+
+#     print("Registered HarborFlow vessels:")
+#     for vessel in vessels.values():
+#         print("\n"
+#             f"- {vessel['name']} | IMO {vessel['imo']} | "
+#             f"{vessel['capacity_teu']:,} TEU"
+#         )
+#     for filename, reason in vessel_problems:
+#         print("\n"
+#             f"Skipped {filename}: {reason}")
+#     print(f"Skipped vessel files: {len(vessel_problems)}\n")
+
+#     vessel_name = input("Vessel name: ")
     vessel = operations.find_vessel_by_name(vessel_name, vessels)
 
     if vessel is None:
