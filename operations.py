@@ -2,6 +2,7 @@
 
 from datetime import date
 
+
 # ---------------------------------------------------------------------------
 #task_02 starts here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
@@ -115,6 +116,70 @@ def build_manifest_report(vessel, call, manifest, shipments):
 # ---------------------------------------------------------------------------
 #task_02 ends here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+#task_03 starts here - Identify Priority Cargo
+#-----------------------------------------------------------------------
+
+def find_shipment_ids(call, call_id, ship_ids):
+    id_lst = call[call_id]["shipment_ids"]
+    control_count = 0
+    cc_count = 0
+    exp_count = 0
+    stan_count = 0
+    shipment_tracker = []
+    for id in id_lst:
+        if id in ship_ids:
+            category, reason = ship_classification(ship_ids[id])
+            if category == "CONTROLLED":
+                control_count += 1
+            if category == "COLD CHAIN":
+                cc_count += 1
+            if category == "EXPEDITE":
+                exp_count += 1
+            if category == "STANDARD":
+                stan_count += 1
+            shipment_tracker.append((id, category, reason))
+        else: 
+            print("Shipment_id not found")
+            # TODO: Brief gives no message for a missing shipment in Task 3.
+            # "Classify every resolved shipment" suggests skipping it silently.
+            # Check with teacher - an extra printed line could fail CodeGrade.
+    return shipment_tracker, control_count, cc_count, exp_count, stan_count
+
+    
+def ship_classification(ship_id):
+    # for each shipment_id - it sets a category for that shipment_id
+    if ship_id["hazardous"] == True :
+        category = "CONTROLLED"
+        reason = "hazardous cargo"
+    elif ship_id["temperature_controlled"] == True:
+        category = "COLD CHAIN"
+        reason = "temperature controlled"
+    elif ship_id["priority"] == "EXPRESS":
+        category = "EXPEDITE"
+        reason = "express service"
+    elif ship_id["weight_kg"] >= 5000:
+        category = "EXPEDITE"
+        reason = "heavy cargo"
+    else:
+        category = "STANDARD"
+        reason = "standard handling"
+
+    return category, reason
+
+# ---------------------------------------------------------------------------
+#task_03 ends here - Identify Priority Cargo
+#-----------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Task 5 Start here - Find port calls by month
+# ---------------------------------------------------------------------------
+
+# WHERE IS TASK 5 ?
+
+# ---------------------------------------------------------------------------
+# Task 5 ends here - Find port calls by month
+# ---------------------------------------------------------------------------
 
 # --------------------------------------------------
 # Task 4: Customer operations profile
