@@ -229,11 +229,37 @@ def run_priority_cargo():
 # ---------------------------------------------------------------------------
 #task_03 ends here - Identify Priority Cargo
 #-----------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+# START Task 4 ------------------
+#--------------------------------------------------------------------------------------
 
 def run_export_customer_profile():
     """Task 4: Export a customer operations profile."""
-    print("Service 4 not implemented yet.")  # TODO: replace
 
+    try:
+        shipments, skipped = data_access.load_shipments()
+
+        customer_name = input("Customer name: ").strip()
+
+        profile = operations.build_customer_profile(
+            shipments, customer_name
+        )
+
+        if profile is None:
+            print("Customer not found.")
+            return
+
+        data_access.save_customer_profile(profile)
+
+    except (FileNotFoundError, ValueError, csv.Error, OSError) as error:
+        print(f"Error - {error}")
+        return
+
+    print("Customer profile updated: exports/customer-profiles.csv")
+
+#--------------------------------------------------------------------------------------
+# ends Task 4  ------------------
+#--------------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------------
 # START Task 5  ------------------
@@ -359,8 +385,8 @@ def run_sanitize_incident():
         data_access.SANITIZED_DIR,
     )
     print(
-        "Sanitized report saved to "
-        f"exports/sanitized/{selected['incident_id']}-sanitized.txt.\n"
+        "Incident sanitized:"
+        f"{selected['incident_id']}\n"
     )
 
 #--------------------------------------------------------------------------------------
