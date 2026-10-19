@@ -17,14 +17,6 @@ import csv
 import json
 from pathlib import Path
 
-
-# ---------------------------------------------------------------------------
-# PATHS
-# All paths are relative to the project root, so the program must be run
-# from there with: python main.py
-# Never replace these with an absolute path from your own computer.
-# ---------------------------------------------------------------------------
-
 DATASET_DIR = Path("dataset")
 VESSELS_DIR = DATASET_DIR / "vessels"        # "/" joins path parts in pathlib
 MANIFESTS_DIR = DATASET_DIR / "manifests"

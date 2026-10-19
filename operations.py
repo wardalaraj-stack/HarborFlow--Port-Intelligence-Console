@@ -116,6 +116,8 @@ def build_manifest_report(vessel, call, manifest, shipments):
 # ---------------------------------------------------------------------------
 #task_02 ends here - Vessel and manifest operations 
 #-----------------------------------------------------------------------
+
+
 # ---------------------------------------------------------------------------
 #task_03 starts here - Identify Priority Cargo
 #-----------------------------------------------------------------------
@@ -141,7 +143,7 @@ def find_shipment_ids(call, call_id, ship_ids):
             shipment_tracker.append((id, category, reason))
         else: 
             print("Shipment_id not found")
-            # TODO: Brief gives no message for a missing shipment in Task 3.
+            # Known-limitations: Brief gives no message for a missing shipment in Task 3.
             # "Classify every resolved shipment" suggests skipping it silently.
             # Check with teacher - an extra printed line could fail CodeGrade.
     return shipment_tracker, control_count, cc_count, exp_count, stan_count
@@ -170,6 +172,47 @@ def ship_classification(ship_id):
 # ---------------------------------------------------------------------------
 #task_03 ends here - Identify Priority Cargo
 #-----------------------------------------------------------------------
+
+# --------------------------------------------------
+# Task 4: Customer operations profile
+# --------------------------------------------------
+
+def build_customer_profile(shipments, customer_name):
+    target = customer_name.strip().casefold()
+
+    matching = []
+
+    for shipment in shipments.values():
+        if shipment["customer"].strip().casefold() == target:
+            matching.append(shipment)
+
+    if not matching:
+        return None
+
+    total_weight = 0.0
+    express_count = 0
+    destinations = set()
+
+    for shipment in matching:
+        total_weight += float(shipment["weight_kg"])
+
+        if shipment["priority"].strip().upper() == "EXPRESS":
+            express_count += 1
+
+        destinations.add(shipment["destination"])
+
+    return {
+        "customer": matching[0]["customer"],
+        "shipment_count": len(matching),
+        "total_weight_kg": f"{total_weight:.2f}",
+        "express_count": express_count,
+        "destinations": "|".join(sorted(destinations)),
+    }
+
+# --------------------------------------------------
+# Task 4: END
+# --------------------------------------------------
+
 
 # ---------------------------------------------------------------------------
 # Task 5 Start here - Find port calls by month
@@ -233,47 +276,6 @@ def collect_month_calls(month, records, vessel_by_id):
 # ---------------------------------------------------------------------------
 # Task 5 ends here - Find port calls by month
 # ---------------------------------------------------------------------------
-
-# --------------------------------------------------
-# Task 4: Customer operations profile
-# --------------------------------------------------
-
-def build_customer_profile(shipments, customer_name):
-    target = customer_name.strip().casefold()
-
-    matching = []
-
-    for shipment in shipments.values():
-        if shipment["customer"].strip().casefold() == target:
-            matching.append(shipment)
-
-    if not matching:
-        return None
-
-    total_weight = 0.0
-    express_count = 0
-    destinations = set()
-
-    for shipment in matching:
-        total_weight += float(shipment["weight_kg"])
-
-        if shipment["priority"].strip().upper() == "EXPRESS":
-            express_count += 1
-
-        destinations.add(shipment["destination"])
-
-    return {
-        "customer": matching[0]["customer"],
-        "shipment_count": len(matching),
-        "total_weight_kg": f"{total_weight:.2f}",
-        "express_count": express_count,
-        "destinations": "|".join(sorted(destinations)),
-    }
-
-# --------------------------------------------------
-# Task 4: END
-# --------------------------------------------------
-
 
 
 # --------------------------------------------------

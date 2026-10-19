@@ -10,14 +10,10 @@ and text processing in text_tools.py.
 # Project modules this file uses. Add new imports here, not further down.
 # ---------------------------------------------------------------------------
 import csv
-
 import data_access
 import operations
 import text_tools
 
-# The menu text is stored once as a constant so it is printed exactly the
-# same way every time. Prompts and wording are part of the client contract,
-# so do not change spacing, capitalization or punctuation here.
 MENU_TEXT = """HARBORFLOW PORT INTELLIGENCE
 1. List registered vessels
 2. Inspect a vessel manifest
@@ -32,13 +28,6 @@ MENU_TEXT = """HARBORFLOW PORT INTELLIGENCE
 
 MENU_ERROR = "Error - Select a service from 1 to 10."
 CLOSE_MESSAGE = "Console closed. HarborFlow operational data remains safe."
-
-
-# ---------------------------------------------------------------------------
-# Service placeholders (Tasks 1-9)
-# Each teammate replaces the body of their function with the real service.
-# Keep the function names so the menu below keeps working.
-# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # Task 1: List Registered Vessels
@@ -70,27 +59,10 @@ def run_list_vessels():
     # hand the loaded data to the printing function
     print_vessel_list(dict_of_dict, skip_lst)
 
-# def run_list_vessels():
+# ---------------------------------------------------------------------------
+# Task 1: END
+# ---------------------------------------------------------------------------
 
-#     """Task 1: List registered vessels."""
-#     # create variable that holds the tuple (dict, list)
-#     vessel_tup = data_access.load_vessels(directory=data_access.VESSELS_DIR)
-#     # unpack that tuple
-#     dict_of_dict, skip_lst = vessel_tup
-#     num_skipped_files = len(skip_lst)
-
-#     print("Registered HarborFlow vessels:")
-#     # print the correct vessel info - in alphabectical/sorted order
-#     #lambda is the Python keyword for making a small function without a name, written in one line.
-#     #reads as: “a function that takes vessel and returns vessel["name"].lower()
-#     for vessel in sorted(dict_of_dict.values(), key=lambda vessel: vessel["name"].lower()):
-#         vessel_name = vessel["name"]
-#         imo_num = vessel["imo"]
-#         capacity = vessel["capacity_teu"]
-#         print(f"- {vessel_name} | IMO {imo_num} | {capacity:,} TEU")
-
-#     # print the number of skipped files       
-#     print(f"Skipped vessel files: {num_skipped_files}")
 
 # ---------------------------------------------------------------------------
 # Task 2: START Inspect a vessel manifest
@@ -111,28 +83,6 @@ def run_inspect_manifest():
 
     vessel_name = input("Vessel name: ")
 
-# def run_inspect_manifest():
-#     try:
-#         vessels, vessel_problems = data_access.load_vessels()
-#         calls, _ = data_access.load_port_calls()
-#         manifests, _ = data_access.load_manifests()
-#         shipments, _ = data_access.load_shipments()
-#     except (FileNotFoundError, ValueError, csv.Error) as error:
-#         print(f"Error - {error}")
-#         return
-
-#     print("Registered HarborFlow vessels:")
-#     for vessel in vessels.values():
-#         print("\n"
-#             f"- {vessel['name']} | IMO {vessel['imo']} | "
-#             f"{vessel['capacity_teu']:,} TEU"
-#         )
-#     for filename, reason in vessel_problems:
-#         print("\n"
-#             f"Skipped {filename}: {reason}")
-#     print(f"Skipped vessel files: {len(vessel_problems)}\n")
-
-#     vessel_name = input("Vessel name: ")
     vessel = operations.find_vessel_by_name(vessel_name, vessels)
 
     if vessel is None:
@@ -177,16 +127,16 @@ def ask_reference_date():
 def print_manifest_report(report):
     """Print the Task 2 report in the required format."""
     print(
-        "\n" #remove
+        
         f"Manifest for {report['vessel_name']} | "
         f"Call {report['call_id']} | {report['date_display']}"
-        "\n" #remove
+        
     )
 
     for number, line in enumerate(report["lines"], start=1):
         if line["resolved"]:
             print(
-                "\n" #remove
+                
                 f"{number}. {line['shipment_id']} | "
                 f"{line['customer']} | {line['weight_kg']} kg | "
                 f"{line['cargo_type']}"
@@ -207,6 +157,7 @@ Missing shipment records: {report['missing']}
 # ---------------------------------------------------------------------------
 #task_03 starts here - Identify Priority Cargo
 #-----------------------------------------------------------------------
+
 def run_priority_cargo():
 
     manifest_tup = data_access.load_manifests(directory=data_access.MANIFESTS_DIR)
@@ -227,8 +178,9 @@ def run_priority_cargo():
             print("Manifest unavailable")
 
 # ---------------------------------------------------------------------------
-#task_03 ends here - Identify Priority Cargo
+#task_03 END
 #-----------------------------------------------------------------------
+
 #--------------------------------------------------------------------------------------
 # START Task 4 ------------------
 #--------------------------------------------------------------------------------------
@@ -351,6 +303,11 @@ def run_port_calls_by_month():
 #--------------------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Task 6: START - Sanitize an incident report.
+# ---------------------------------------------------------------------------
+
+
 def run_sanitize_incident():
     """Task 6: Sanitize an incident report."""
     incidents, _skipped = data_access.load_incidents()
@@ -389,8 +346,14 @@ def run_sanitize_incident():
         f"{selected['incident_id']}\n"
     )
 
+
+# ---------------------------------------------------------------------------
+# Task 6 END : Sanitize an incident report.
+# ---------------------------------------------------------------------------
+
+
 #--------------------------------------------------------------------------------------
-# START of Task 7 ------------------
+# START of Task 7 longest contiguous event sequence
 #--------------------------------------------------------------------------------------
 
 def run_stable_sequence():
