@@ -177,16 +177,16 @@ def ask_reference_date():
 def print_manifest_report(report):
     """Print the Task 2 report in the required format."""
     print(
-        "\n"
+        "\n" #remove
         f"Manifest for {report['vessel_name']} | "
         f"Call {report['call_id']} | {report['date_display']}"
-        "\n"
+        "\n" #remove
     )
 
     for number, line in enumerate(report["lines"], start=1):
         if line["resolved"]:
             print(
-                "\n"
+                "\n" #remove
                 f"{number}. {line['shipment_id']} | "
                 f"{line['customer']} | {line['weight_kg']} kg | "
                 f"{line['cargo_type']}"
@@ -195,9 +195,9 @@ def print_manifest_report(report):
             print(f"{number}. {line['shipment_id']} | MISSING RECORD")
 
     print(f"""
-    Declared shipments: {report['declared']}
-    Resolved weight: {report['resolved_weight']:.2f} kg
-    Missing shipment records: {report['missing']}
+Declared shipments: {report['declared']}
+Resolved weight: {report['resolved_weight']:.2f} kg
+Missing shipment records: {report['missing']}
 """)
 
 # ---------------------------------------------------------------------------
