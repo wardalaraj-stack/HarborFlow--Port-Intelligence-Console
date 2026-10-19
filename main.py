@@ -359,8 +359,8 @@ def run_sanitize_incident():
         data_access.SANITIZED_DIR,
     )
     print(
-        "Sanitized report saved to "
-        f"exports/sanitized/{selected['incident_id']}-sanitized.txt.\n"
+        "Incident sanitized:"
+        f"{selected['incident_id']}\n"
     )
 
 #--------------------------------------------------------------------------------------
