@@ -321,3 +321,78 @@ def write_sanitized_report(incident_id, sanitized_text, output_directory):
 #task_06 ends here - sanitization operations
 #------------------------------------------------------------------------------
 
+
+# Task 9: Search incident reports (integrated from the existing team branch)
+def load_incident_index(path=INCIDENT_INDEX_FILE):
+    """Load a valid, up-to-date incident index or return None."""
+    try:
+        if not path.is_file():
+            return None
+
+        cache_time = path.stat().st_mtime
+
+        for source_file in INCIDENTS_DIR.glob("*.json"):
+            if source_file.stat().st_mtime > cache_time:
+                return None
+
+        with path.open("r", encoding="utf-8") as file:
+            cache = json.load(file)
+
+        if not isinstance(cache, dict):
+            return None
+
+        if set(cache.keys()) != {"index", "titles"}:
+            return None
+
+        index = cache["index"]
+        titles = cache["titles"]
+
+        if not isinstance(index, dict) or not isinstance(titles, dict):
+            return None
+
+        if any(
+            not isinstance(word, str)
+            or not isinstance(ids, list)
+            or any(not isinstance(incident_id, str) for incident_id in ids)
+            or ids != sorted(set(ids))
+            for word, ids in index.items()
+        ):
+            return None
+
+        if any(
+            not isinstance(incident_id, str)
+            or not isinstance(title, str)
+            for incident_id, title in titles.items()
+        ):
+            return None
+
+        from text_tools import normalize_words
+        if any(
+            normalize_words(word) != [word]
+            for word in index
+        ):
+            return None
+
+        if list(index) != sorted(index):
+            return None
+
+        if list(titles) != sorted(titles):
+            return None
+         # Reject incident references that have no cached title.
+        if any(
+            incident_id not in titles
+            for ids in index.values()
+            for incident_id in ids
+        ):
+            return None
+        return cache
+    except (OSError, ValueError, TypeError):
+        return None
+
+def save_incident_index(cache, path=INCIDENT_INDEX_FILE):
+    """Save the incident index as formatted JSON."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open("w", encoding="utf-8") as file:
+        json.dump(cache, file, indent=2, ensure_ascii=False)
+        file.write("\n")

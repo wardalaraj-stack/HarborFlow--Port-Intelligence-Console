@@ -51,3 +51,9 @@ def longest_stable_sequence(events):
             best_start = left
 
     return best_length, events[best_start:best_start + best_length]
+
+
+# Task 9: Search incident reports (integrated from the existing team branch)
+def normalize_words(text):
+    """Convert text into lowercase words without punctuation."""
+    return re.findall(r"\w+", text.lower())

@@ -499,8 +499,33 @@ def run_weather_risk():
 # End of Task 8 ------------------
 #--------------------------------------------------------------------------------------
 def run_search_incidents():
-    """Task 9: Search incident reports."""
-    print("Service 9 not implemented yet.")  # TODO: replace
+    """Search incident reports using the cached inverted index."""
+    try:
+        cache = operations.get_incident_search_cache()
+    except (OSError, ValueError) as error:
+        print(f"Unable to prepare incident search: {error}")
+        return
+
+    query = input("Search incident reports: ").strip()
+
+    if not query:
+        print("Please enter a search query.")
+        return
+
+    results = operations.search_incident_index(cache, query)
+
+    if not results:
+        print(f"No matches for '{query}'.")
+        return
+
+    print(f"Matches for '{query}':")
+
+    for result in results:
+        print(
+            f"- {result['incident_id']} | "
+            f"score {result['score']} | "
+            f"{result['title']}"
+        )
 
 
 # ---------------------------------------------------------------------------

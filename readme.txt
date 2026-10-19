@@ -86,8 +86,37 @@ Task 7 implementation and the listed tests have passed. Final documentation revi
 ---------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------
 
-Name:
-Contribution:
+Name: Waldean Nelson
+
+Contribution: Task 0 - Product Shell
+
+- Built the main menu loop in main.py using a loop-state variable (no exit() or break).
+- Rejected non-integer and out-of-range input with "Error - Select a service from 1 to 10."
+- Connected all services to the menu so each returns to the menu when finished.
+- Caught FileNotFoundError, json.JSONDecodeError, csv.Error and ValueError where a useful message can be given, with no blanket except.
+- Closed the console only through option 10 with "Console closed. HarborFlow operational data remains safe."
+
+Contribution: Task 1 - List Registered Vessels
+
+- Wrote load_json(path) for single files and load_vessels(directory) for the vessel folder.
+- Checked that vessel_id, name, imo and capacity_teu exist in each record.
+- Skipped and counted malformed or incomplete files without hiding valid vessels.
+- Sorted vessels by name (case-insensitive) and formatted capacity with thousands separators.
+
+Contribution: Task 3 - Identify Priority Cargo
+
+- Matched call IDs case-insensitively after removing surrounding spaces.
+- Wrote a pure classification function that returns category and reason, with rule order visible in the code.
+- Printed each shipment in manifest order, followed by category totals.
+- Handled unknown calls ("Port call not found") and missing or malformed manifests ("Manifest unavailable").
+
+Testing:
+
+- Menu: valid choices, text input, 0, 11 and empty input.
+- Vessels: malformed JSON file, missing required field, mixed valid and invalid files.
+- Classification: each rule alone, rule order when several conditions apply, missing boolean flags.
+- Calls: known call ID, unknown call ID, missing manifest.
+- Results were recorded in test-ledger.csv.
 ---------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------
 Name:
