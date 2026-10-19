@@ -428,12 +428,87 @@ def run_stable_sequence():
 # END of Task 7 ------------------
 #--------------------------------------------------------------------------------------
 
+#--------------------------------------------------------------------------------------
+# Start of Task 8 ------------------
+#--------------------------------------------------------------------------------------
 
 def run_weather_risk():
     """Task 8: Assess weather risk for upcoming calls."""
-    print("Service 8 not implemented yet.")  # TODO: replace
 
+    vessel_name = input("Vessel name: ").strip()
 
+    while True:
+        date_text = input("Reference date (YYYY-MM-DD): ").strip()
+
+        try:
+            reference_date = operations.parse_reference_date(date_text)
+            break
+        except ValueError:
+            print("Error - Date must use YYYY-MM-DD.")
+
+    try:
+        vessels, skipped_vessels = data_access.load_vessels()
+        calls, skipped_calls = data_access.load_port_calls()
+        weather, skipped_weather = data_access.load_weather()
+
+        result = operations.assess_weather_risk(
+            vessel_name,
+            reference_date,
+            vessels,
+            calls,
+            weather
+        )
+
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Error assessing weather risk: {error}")
+        return
+
+    if result["status"] == "vessel_not_found":
+        print("Vessel not found.")
+        return
+
+    if result["status"] == "no_upcoming_calls":
+        print("No upcoming port calls found.")
+        return
+
+    for report in result["reports"]:
+        call = report["call"]
+
+        arrival_date = operations.parse_reference_date(
+            call["arrival_date"]
+        )
+
+        date_display = (
+            f"{arrival_date.day} "
+            f"{arrival_date.strftime('%B %Y')}"
+        )
+
+        print(
+            f"\n{vessel_name} | "
+            f"{call['port_code']} | "
+            f"{date_display}"
+        )
+
+        forecast = report["forecast"]
+
+        if forecast is None:
+            print("Forecast unavailable.")
+            continue
+
+        print(
+            f"Wind: {forecast['wind_kmh']:.1f} km/h | "
+            f"Rain: {forecast['precipitation_mm']:.1f} mm | "
+            f"Waves: {forecast['wave_height_m']:.1f} m"
+        )
+
+        print(
+            "Recommendation: "
+            + " ".join(report["recommendations"])
+        )
+
+#--------------------------------------------------------------------------------------
+# End of Task 8 ------------------
+#--------------------------------------------------------------------------------------
 def run_search_incidents():
     """Task 9: Search incident reports."""
     print("Service 9 not implemented yet.")  # TODO: replace
