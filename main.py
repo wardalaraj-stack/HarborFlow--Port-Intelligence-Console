@@ -152,7 +152,7 @@ def run_inspect_manifest():
 
     manifest = operations.find_manifest(manifests, call)
     if manifest is None:
-        print("Manifest unavailable.")
+        print("Port call not found.")
         return
 
     report = operations.build_manifest_report(
