@@ -424,8 +424,15 @@ def assess_weather_risk(vessel_name, reference_date, vessels, calls, weather_row
         "reports": reports,
     }
 
+#--------------------------------------------------------------------------------------
+# End of Task 8 
+#--------------------------------------------------------------------------------------
 
-# Task 9: Search incident reports (integrated from the existing team branch)
+
+#--------------------------------------------------------------------------------------
+# Start of Task 9 Search incident reports
+#--------------------------------------------------------------------------------------
+
 def build_incident_index(incidents):
 
     """Build an inverted word index and a title lookup."""
@@ -497,3 +504,7 @@ def get_incident_search_cache():
     data_access.save_incident_index(cache)
 
     return cache
+
+#--------------------------------------------------------------------------------------
+# End of Task 9 Search incident reports
+#--------------------------------------------------------------------------------------

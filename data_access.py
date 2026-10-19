@@ -321,8 +321,10 @@ def write_sanitized_report(incident_id, sanitized_text, output_directory):
 #task_06 ends here - sanitization operations
 #------------------------------------------------------------------------------
 
+#--------------------------------------------------------------------------------------
+# Start of Task 9 Search incident reports
+#--------------------------------------------------------------------------------------
 
-# Task 9: Search incident reports (integrated from the existing team branch)
 def load_incident_index(path=INCIDENT_INDEX_FILE):
     """Load a valid, up-to-date incident index or return None."""
     try:
@@ -396,3 +398,6 @@ def save_incident_index(cache, path=INCIDENT_INDEX_FILE):
     with path.open("w", encoding="utf-8") as file:
         json.dump(cache, file, indent=2, ensure_ascii=False)
         file.write("\n")
+#--------------------------------------------------------------------------------------
+# Start of Task 9 Search incident reports
+#--------------------------------------------------------------------------------------

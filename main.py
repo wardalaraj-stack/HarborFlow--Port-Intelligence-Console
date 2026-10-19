@@ -175,7 +175,7 @@ def run_priority_cargo():
             print(f"{ship_id} | {category} | {reason}")
         print(f"Category totals: CONTROLLED={control_count}, COLD CHAIN={cc_count}, EXPEDITE={exp_count}, STANDARD={stan_count}")
     else:
-            print("Manifest unavailable")
+            print("Port call not found.")
 
 # ---------------------------------------------------------------------------
 #task_03 END
@@ -498,6 +498,11 @@ def run_weather_risk():
 #--------------------------------------------------------------------------------------
 # End of Task 8 ------------------
 #--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# Start of Task 9 Search incident reports
+#--------------------------------------------------------------------------------------
+
 def run_search_incidents():
     """Search incident reports using the cached inverted index."""
     try:
@@ -515,7 +520,7 @@ def run_search_incidents():
     results = operations.search_incident_index(cache, query)
 
     if not results:
-        print(f"No matches for '{query}'.")
+        print(f"Matches for '{query}': not found.")
         return
 
     print(f"Matches for '{query}':")
@@ -526,6 +531,10 @@ def run_search_incidents():
             f"score {result['score']} | "
             f"{result['title']}"
         )
+
+#--------------------------------------------------------------------------------------
+# End of Task 9 ------------------
+#--------------------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
