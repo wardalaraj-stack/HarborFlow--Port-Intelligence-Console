@@ -84,5 +84,7 @@ Task 7,Trailing whitespace normalization,"Select service 7; enter HFL-GOT-2048 w
 Task 7,Manifest loader FileNotFoundError recovery,"Mock load_manifests to raise FileNotFoundError; enter HFL-GOT-2048","Display Manifest unavailable. and exit service without crashing","Displayed Manifest unavailable. and returned to PowerShell without traceback",Raydel Savón,Passed,2026-10-14
 Task 7,Port-call loader FileNotFoundError recovery,"Mock load_port_calls to raise FileNotFoundError; enter HFL-GOT-2048","Display loading error and exit service without crashing","Displayed Error - Simulated missing port calls file and returned to PowerShell without traceback",Raydel Savón,Passed,2026-10-14
 Task 7,Dataset preservation check,"Run git diff -- dataset/ after Task 7 tests","No unstaged changes to tracked dataset files","No output; no unstaged changes detected in tracked dataset files",Raydel Savón,Passed,2026-10-14
+Task 5,Date validation after merge,"Call parse_call_date with 2026-10-15 from root-level operations.py","Return 2026-10-15 without exception","Returned 2026-10-15 without exception",Raydel Savón,Passed,2026-10-14
+Task 5,Invalid calendar date after merge,"Call parse_call_date with 2026-02-30","Raise ValueError for invalid calendar date","Raised ValueError: day 30 must be in range 1..28 for month 2 in year 2026",Raydel Savón,Passed,2026-10-14
 
 

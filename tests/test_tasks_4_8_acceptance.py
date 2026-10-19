@@ -76,4 +76,5 @@ def test_task8_missing_forecast_exact_message_and_continues(capsys):
     output=capsys.readouterr().out
     assert 'Forecast unavailable.' in output
     assert 'Weather forecast unavailable.' not in output
-    assert 'Port call: B' in output
+    assert 'Nordic Relay | OSL | 15 October 2026' in output
+    assert 'Recommendation: Normal operating plan.' in output

@@ -109,6 +109,8 @@ def test_task8_multiple_calls_displayed(capsys):
         main.run_weather_risk()
 
     output = capsys.readouterr().out
-    assert "CALL-A" in output
-    assert "CALL-B" in output
+   
+    assert "Nordic Relay | GOT | 14 October 2026" in output
+    assert "Nordic Relay | OSL | 15 October 2026" in output
+
     assert output.count("Forecast unavailable.") == 2
