@@ -17,21 +17,31 @@ Wednesday 21 October 2026
 
 Omega
 
-Follow your group’s allocated time in the presentation schedule. Each group has four minutes in total, including demonstrations and questions. The gaps between groups are for transitions and do not extend your presentation time.
+Follow your group’s allocated time in the presentation schedule. Each group has four minutes in total, 
+including demonstrations and questions. The gaps between groups are for transitions and do not extend 
+your presentation time.
 
 FIND THE PRESENTATION SCHEDULE HEREDownload FIND THE PRESENTATION SCHEDULE HERE
 
-Your presentation should show that you have built integrated, working programs and understand how they work. Both assignments require every group member to understand and be able to explain the complete system.
+Your presentation should show that you have built integrated, working programs and understand how they work. 
+Both assignments require every group member to understand and be able to explain the complete system.
 
 Prepare the following:
 
-Introduce your group and design briefly. Explain how you organised the programs into functions and, where relevant, modules. Describe each member’s concrete contribution.
-Demonstrate one representative feature from each assignment. Run the programs through their menus and show the resulting output. Choose examples that let you explain meaningful logic rather than simply displaying the menu.
-Show one boundary or error-handling case. Explain the expected behavior, demonstrate what happens, and show the corresponding test evidence in your test ledger.
-Be ready to explain the code. Each member should be able to trace input through validation, processing and output, including features initially written by another member.
-For Assignment 1, be prepared to explain your use of functions, arguments, return values, conditions, loops and lists. You should also understand input validation, boundary cases and how shared calculations are reused.
+Introduce your group and design briefly. Explain how you organised the programs into functions and, where relevant, 
+modules. Describe each member’s concrete contribution.
+Demonstrate one representative feature from each assignment. Run the programs through their menus and show the 
+resulting output. Choose examples that let you explain meaningful logic rather than simply displaying the menu.
+Show one boundary or error-handling case. Explain the expected behavior, demonstrate what happens, and show the 
+corresponding test evidence in your test ledger.
+Be ready to explain the code. Each member should be able to trace input through validation, processing and output, 
+including features initially written by another member.
+For Assignment 1, be prepared to explain your use of functions, arguments, return values, conditions, loops and lists. 
+You should also understand input validation, boundary cases and how shared calculations are reused.
 
-For Assignment 2, be prepared to explain how you load and validate JSON/CSV data, connect records using identifiers, handle missing or malformed records, and create persistent outputs. You should also be able to explain the regex transformations, sliding-window algorithm and cached search index.
+For Assignment 2, be prepared to explain how you load and validate JSON/CSV data, connect records using identifiers, 
+handle missing or malformed records, and create persistent outputs. You should also be able to explain the regex 
+transformations, sliding-window algorithm and cached search index.
 
  
 
@@ -63,10 +73,16 @@ Questions
 
  
 
-Rehearse beforehand and keep the demonstrations focused so that the complete presentation, including questions, fits within four minutes. You do not need to demonstrate every task during the presentation, but all required tasks must be implemented and available for inspection.
+Rehearse beforehand and keep the demonstrations focused so that the complete presentation, including questions, 
+fits within four minutes. You do not need to demonstrate every task during the presentation, but all required tasks
+ must be implemented and available for inspection.
 
-Have the programs, source code, README files and test ledgers for both Assignment 1 and Assignment 2, together with the supplied Assignment 2 dataset, ready before your slot begins. Check that both programs run from their respective project folders, and use the versions submitted for assessment. Keep the supplied Assignment 2 dataset intact.
+Have the programs, source code, README files and test ledgers for both Assignment 1 and Assignment 2, together with 
+the supplied Assignment 2 dataset, ready before your slot begins. Check that both programs run from their respective 
+project folders, and use the versions submitted for assessment. Keep the supplied Assignment 2 dataset intact.
 
-All group members should attend and participate. Be ready before your allocated start time. Slides are optional; prioritise running the programs and explaining the code clearly.
+All group members should attend and participate. Be ready before your allocated start time. Slides are optional; 
+prioritise running the programs and explaining the code clearly.
 
-The presentations follow the assignments’ existing G/U criteria: correct behaviour, compliance with the technical requirements, testing, maintainable design and shared understanding.
+The presentations follow the assignments’ existing G/U criteria: correct behaviour, compliance with the technical 
+requirements, testing, maintainable design and shared understanding.

@@ -446,7 +446,7 @@ def run_weather_risk():
             vessels,
             calls,
             weather
-        )
+        ) #result is a dict returning status, invalid_calls, malformed_forecasts, and reports
 
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(f"Error assessing weather risk: {error}")
@@ -494,7 +494,7 @@ def run_weather_risk():
             "Recommendation: "
             + " ".join(report["recommendations"])
         )
-
+        
 #--------------------------------------------------------------------------------------
 # End of Task 8 ------------------
 #--------------------------------------------------------------------------------------

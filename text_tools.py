@@ -38,6 +38,7 @@ def longest_stable_sequence(events):
     best_length = 0
 
     for right, event in enumerate(events):
+        #right is basicly the inhdex of each event "counter"
         if event in last_seen and last_seen[event] >= left:
             left = last_seen[event] + 1
 

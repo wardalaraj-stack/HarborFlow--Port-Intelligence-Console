@@ -73,13 +73,6 @@ Verified integration and console tests covering manifest retrieval, successful p
 
 Simulated `FileNotFoundError` exceptions for the port-call and manifest loaders without modifying the dataset. Results were recorded in `test-ledger.csv`.
 
-**Architecture:**
-
-- `code/main.py`: User interaction, port-call selection, error handling, and formatted output.
-- `code/data_access.py`: Existing port-call and manifest loaders.
-- `code/operations.py`: Existing manifest lookup and identifier consistency check.
-- `code/text_tools.py`: Longest stable-sequence algorithm.
-
 **Status:**
 
 Task 7 implementation and the listed tests have passed. Final documentation review, team integration, and submission checks remain pending.
@@ -127,19 +120,148 @@ Name (if applicable):
 Contribution:
 ---------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------
-Architecture
+Architecture - Abdaalsalam Alaraj
 ------------
-main.py responsibilities:
-data_access.py responsibilities:
-operations.py responsibilities:
-text_tools.py responsibilities:
+HarborFlow is a standard-library, menu-driven Python console application.
+It separates console interaction, data access, business rules, and text
+processing so each responsibility can be understood and tested independently.
+
+| Module | Responsibility |
+| --- | --- |
+| `main.py` | Starts the menu, obtains and validates user input, invokes services 1-9, presents reports, and displays recoverable errors. |
+| `data_access.py` | Defines dataset and export paths; loads, validates, sorts, and writes JSON and CSV data; returns loader diagnostics instead of printing them. |
+| `operations.py` | Holds business rules that do not print or read files directly, including manifest selection, cargo classification, month filtering, weather assessment, and incident indexing/search. |
+| `text_tools.py` | Provides regular-expression incident sanitization, the stable event-sequence algorithm, and incident-search word normalization. |
+
+Data and control flow
+---------------------
+1. The user selects a service in `main.py`.
+2. The service requests records through `data_access.py`. JSON collections are
+   returned as dictionaries keyed by their business identifiers, and CSV files
+   are returned as rows in source order.
+3. `data_access.py` returns both usable records and diagnostics for individual
+   records it skipped. Services decide which diagnostics to show.
+4. `main.py` sends valid records and normalized user input to `operations.py`
+   or `text_tools.py`.
+5. The service prints the resulting report or error message. Services that
+   generate durable output write under `exports/`.
+
+The dataset is intentionally relational: port calls reference vessels,
+manifests reference port calls and shipments, and incidents reference port
+calls. The application resolves these links using identifiers stored inside
+records rather than filenames.
+
+Run instructions
+----------------
+Run the console from the repository root so the relative `dataset/` and
+`exports/` paths resolve correctly:
+
+    py -3 main.py
+
+The project uses only the Python standard library. It has been exercised with
+Python 3.14 on Windows. On systems without the Windows Python launcher, run:
+
+    python main.py
 
 File and error-handling design
 ------------------------------
-How paths are resolved:
-How malformed or missing input is handled:
-How generated files are updated safely:
+Path resolution
+~~~~~~~~~~~~~~~
+`data_access.py` builds all source and output paths from relative `Path`
+values. Source records reside below `dataset/`; generated customer profiles
+and sanitized incident reports reside below `exports/`. This keeps supplied
+data separate from generated output.
+
+JSON handling
+~~~~~~~~~~~~~
+`load_json_collection()` processes JSON files in deterministic filename order.
+It keeps valid object records, keyed by their in-record business ID, and
+returns diagnostics for malformed JSON, missing files encountered during
+loading, non-object payloads, missing required fields, and duplicate IDs.
+The first valid record for a duplicate ID is retained. Individual bad files do
+not stop other valid records from loading.
+
+CSV handling
+~~~~~~~~~~~~
+`load_csv_rows()` verifies required headers before processing rows. It keeps
+complete rows as source strings and returns line-number diagnostics for rows
+with absent or blank required cells. Missing CSV files, parsing failures, and
+invalid headers are deliberately raised to the calling service, which can
+present a service-specific message instead of continuing with incomplete
+source data.
+
+User input and service recovery
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The console validates menu choices, dates, month numbers, and incident list
+selections before processing a request. Invalid input is normally reported
+with the required error text and only the relevant prompt is repeated.
+Several services catch expected `FileNotFoundError`, `ValueError`, `csv.Error`,
+or `OSError` exceptions, print a human-readable message, and return control to
+the menu. The Task 9 incident-search cache is treated as expendable: a
+missing, stale, malformed, or structurally invalid cache is ignored and
+rebuilt from the source incident records.
+
+Generated output
+~~~~~~~~~~~~~~~~
+Customer-profile updates create the output directory when necessary, write a
+temporary CSV in that directory, then atomically replace the final profile
+file. Sanitized incident reports create `exports/sanitized/` when needed and
+write `<incident_id>-sanitized.txt`. The incident-search index is written as
+formatted JSON at `dataset/incident-index.json`.
+
+Testing and quality evidence
+----------------------------
+Automated test modules under `tests/` cover Task 2 manifest behavior, Task 4
+and Task 8 acceptance behavior, Task 8 edge cases and logic, and Task 9
+search behavior. The repository test ledger records normal, boundary,
+missing-data, and malformed-data scenarios, including the verified Task 2 and
+Task 6 cases.
+
+Run the available automated tests from the repository root with:
+
+    py -3 -m unittest discover -s tests -v
+
+For business requirements and record fields, see `docs/specifications/`,
+`docs/VARIABLE-DICTIONARY.md`, and `dataset/DATA-DICTIONARY.md`. These
+documents remain the detailed source of truth; this README describes the
+integrated application design.
 
 Known limitations
 -----------------
-Write "None known" or describe each known limitation.
+The project intentionally keeps malformed and incomplete sample data so that
+the console can demonstrate recovery behavior. The following are known
+implementation limitations, not intentional data cases:
+
+- **Repository-root working directory required.** All configured paths are
+  relative. Running the program from another current working directory can
+  make the dataset and exports unavailable.
+- **Uneven top-level loader recovery.** Tasks 1, 3, and 6 call shared loaders
+  without their own file/format exception handlers. A missing or unreadable
+  source can therefore terminate those services rather than show a
+  service-specific recovery message.
+- **A missing JSON directory looks empty.** `load_json_collection()` uses
+  `Path.glob()`, which returns no records when its directory does not exist;
+  it does not itself report that absence. Task 5 adds an explicit vessel
+  directory check, but other users of the loader do not.
+- **Task 2 uses the wrong unavailable-manifest message.** When no compatible
+  manifest is found, it prints `Port call not found.` instead of the specified
+  `Manifest unavailable.` This outcome is recorded as a failure in
+  `test-ledger.csv`.
+- **Incident validation is incomplete.** `validate_incidents()` checks that
+  every required field exists, but its empty/non-string check applies only to
+  the last required field. It is also not currently used by the incident
+  loader. An empty earlier incident field can therefore be accepted.
+- **Task 3 assumes optional classification fields exist.** Its cargo
+  classification indexes `hazardous` and `temperature_controlled` directly,
+  even though the shared data model treats those fields as optional. A record
+  without either field can raise `KeyError`.
+- **Write robustness differs by output type.** Customer-profile saving uses an
+  atomic replacement, but sanitized-report and incident-index writes are
+  direct writes. An interruption while those files are being written can leave
+  partial output.
+- **Interactive interface only.** There are no command-line arguments,
+  configuration options, logging, or API endpoints; the program is intended
+  to be run through its numbered console menu.
+- **Coverage is not yet uniform.** The committed automated tests focus on
+  Tasks 2, 4, 8, and 9. Other tasks rely more heavily on recorded manual and
+  ledger-based verification.

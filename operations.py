@@ -308,6 +308,7 @@ def select_upcoming_calls(calls, vessel_id, reference_date):
             qualifying.append((arrival, call["call_id"], call))
 
     qualifying.sort(key=lambda item: (item[0], item[1]))
+    
     return [item[2] for item in qualifying], invalid_rows
 
 
@@ -367,7 +368,7 @@ def assess_weather_risk(vessel_name, reference_date, vessels, calls, weather_row
 
     Returns a dictionary with status, invalid/malformed diagnostics, and reports.
     """
-    vessel = find_vessel_by_name(vessel_name, vessels)
+    vessel = find_vessel_by_name(vessel_name, vessels) #function from task 2
 
     if vessel is None:
         return {
@@ -488,14 +489,14 @@ def search_incident_index(cache, query):
             "title": cache["titles"][incident_id],
             "score": scores[incident_id]
         })
-
+    
     return results
 
 def get_incident_search_cache():
     """Reuse a valid cache or rebuild it from incident reports."""
     cache = data_access.load_incident_index()
 
-    if cache is not None:
+    if cache is not None:   #check if the cache exists before attempting to rebuild it
         return cache
 
     incidents, skipped = data_access.load_incidents()

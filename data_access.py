@@ -399,5 +399,5 @@ def save_incident_index(cache, path=INCIDENT_INDEX_FILE):
         json.dump(cache, file, indent=2, ensure_ascii=False)
         file.write("\n")
 #--------------------------------------------------------------------------------------
-# Start of Task 9 Search incident reports
+# End of Task 9 Search incident reports
 #--------------------------------------------------------------------------------------
