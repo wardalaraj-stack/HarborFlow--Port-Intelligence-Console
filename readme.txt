@@ -7,7 +7,31 @@ Python version tested:
 
 Team members and concrete contributions
 ---------------------------------------
+Name: Abdalsalam Ward Alaraj
+Contribution:
+- Served as the technical lead by coordinating the integration of the separate task 
+implementations into the main application.
+- Designed the overall structure and organized the project into task-specific implementation and review files.
+- Created the detailed task instruction files describing the required inputs, 
+calculations, outputs, validation rules, testing checklists, and acceptance criteria.
+- Maintained project files, structure, and documentation.
+- Created learning resources and documentation to support team members' understanding of the project and its components.
+- Created simplified guides and explanations to help team members quickly understand complex parts of the project.
+- Created the allowed-tools and limitations guide to keep the solution within the 
+assignment's permitted Python scope.
+- Independently implemented Task 2 
+- Independently implemented Task 6 
+- Hosted and managed the project repository, including branch coordination, merging 
+team changes, and maintaining the shared project state.
+- Stress-tested the application and checked normal, boundary, and invalid-input 
+cases across the required tasks.
+- Reviewed the implementation against the allowed-tools and limitations guide, 
+including restrictions on dictionaries, files, regular expressions, sets, 
+list comprehensions, classes, third-party packages, and exit().
+- Validated the work submitted by group members and integrated the completed 
+task implementations into the final console structure.
 
+--------------------------------------------------------------------------------------------------------------------
 Name: Raydel Savón
 
 Contribution: Task 5 - Find Port Calls by Month
@@ -112,8 +136,31 @@ Testing:
 - Results were recorded in test-ledger.csv.
 ---------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------
-Name:
-Contribution:
+
+Name: Mado Sallom
+Contribution: Tasks 4, 8 and 9; integration and related tests.
+
+Task 4 — Export a customer operations profile
+- Integrated menu option 4 in main.py.
+- Built the customer profile in operations.py by matching customer names case-insensitively and ignoring surrounding whitespace.
+- Calculated shipment_count, total_weight_kg (two decimals), express_count and sorted unique destinations.
+- Saved new or updated customer rows in exports/customer-profiles.csv through data_access.py, without duplicating customer rows.
+- Wrote automated checks for profile aggregation, missing customers and CSV update behavior.
+
+Task 8 — Assess weather risk for upcoming calls
+- Integrated menu option 8 in main.py and supporting business logic in operations.py.
+- Validated the reference date, selected upcoming vessel calls, ordered them chronologically and matched forecasts by port code and arrival date.
+- Applied wind, wave and rain thresholds; returned multiple safety recommendations in the prescribed order when applicable.
+- Handled missing forecasts without stopping later calls.
+- Added tests covering boundary values, combined rules, invalid dates, missing forecasts, multiple calls, lookup matching and malformed numeric forecast rows.
+
+Task 9 — Search incident reports
+- Integrated menu option 9 with the shared console on main.
+- Implemented normalized word tokenization in text_tools.py and an inverted incident index and title lookup in operations.py.
+- Prevented repeated incident IDs within each word list by deduplicating report words.
+- Implemented search scoring by distinct matching query words and ordering by descending score then incident ID.
+- Used dataset/incident-index.json as a reusable cache. Added load, validate, stale-cache rejection and save logic in data_access.py.
+- Added 14 automated Task 9 tests in tests/test_task_9.py and manually demonstrated searching for 'reefer delay' through menu option 9.
 ---------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------
 Name (if applicable):
@@ -151,17 +198,6 @@ manifests reference port calls and shipments, and incidents reference port
 calls. The application resolves these links using identifiers stored inside
 records rather than filenames.
 
-Run instructions
-----------------
-Run the console from the repository root so the relative `dataset/` and
-`exports/` paths resolve correctly:
-
-    py -3 main.py
-
-The project uses only the Python standard library. It has been exercised with
-Python 3.14 on Windows. On systems without the Windows Python launcher, run:
-
-    python main.py
 
 File and error-handling design
 ------------------------------
@@ -209,22 +245,6 @@ file. Sanitized incident reports create `exports/sanitized/` when needed and
 write `<incident_id>-sanitized.txt`. The incident-search index is written as
 formatted JSON at `dataset/incident-index.json`.
 
-Testing and quality evidence
-----------------------------
-Automated test modules under `tests/` cover Task 2 manifest behavior, Task 4
-and Task 8 acceptance behavior, Task 8 edge cases and logic, and Task 9
-search behavior. The repository test ledger records normal, boundary,
-missing-data, and malformed-data scenarios, including the verified Task 2 and
-Task 6 cases.
-
-Run the available automated tests from the repository root with:
-
-    py -3 -m unittest discover -s tests -v
-
-For business requirements and record fields, see `docs/specifications/`,
-`docs/VARIABLE-DICTIONARY.md`, and `dataset/DATA-DICTIONARY.md`. These
-documents remain the detailed source of truth; this README describes the
-integrated application design.
 
 Known limitations
 -----------------
@@ -265,3 +285,8 @@ implementation limitations, not intentional data cases:
 - **Coverage is not yet uniform.** The committed automated tests focus on
   Tasks 2, 4, 8, and 9. Other tasks rely more heavily on recorded manual and
   ledger-based verification.
+- **Task 9 has limited error feedback.** It performs several data transformations 
+  and writes multiple outputs, but its error messages do not always indicate which specific step failed.
+- **Task 8 does not validate input thoroughly.** It assumes that all required fields are 
+  present and correctly formatted, which can lead to unexpected errors if the input data is incomplete or malformed.
+- **
