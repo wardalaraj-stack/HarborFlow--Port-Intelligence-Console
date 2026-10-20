@@ -1,4 +1,14 @@
 area,test_case,input_summary,expected_result,actual_result,owner,status,date
+Task 0 - Menu,Non-integer input,Select service: abc,Error - Select a service from 1 to 10. Menu shown again.,,Waldean Nelson, passed,2026-10-16
+Task 0 - Menu,Above range (boundary),Select service: 11,Error - Select a service from 1 to 10. Menu shown again.,,Waldean Nelson, passed,2026-10-16
+Task 0 - Menu,Below range (boundary),Select service: 0,Error - Select a service from 1 to 10. Menu shown again.,,Waldean Nelson, passed,2026-10-16
+Task 0 - Menu,Empty input,Select service: (Enter),Error - Select a service from 1 to 10. Menu shown again.,,Waldean Nelson, passed,2026-10-2016
+Task 0 - Menu,Close console,Select service: 10,Console closed. HarborFlow operational data remains safe. Program ends.,,Waldean Nelson, passed,2026-10-16
+Task 1 - Vessels,Valid vessels sorted,Option 1,"Baltic Pioneer, Nordic Relay, Skagerrak Star in that order; capacity shown as 824 / 1,120 / 1,460 TEU",,Waldean Nelson, passed,2026-10-16
+Task 1 - Vessels,Malformed file skipped,Option 1 (damaged-record.json in dataset),Skipped vessel files: 1; Incomplete Import not listed; three valid vessels still shown,,Waldean Nelson, passed,2026-10-16
+Task 3 - Priority cargo,Known call ID,Call ID: HFL-AAR-2071,"SHP-1045 EXPEDITE, SHP-1046 CONTROLLED, SHP-1067 EXPEDITE; Category totals: CONTROLLED=1, COLD CHAIN=0, EXPEDITE=2, STANDARD=0",,Waldean Nelson, passed,2026-10-20
+Task 3 - Priority cargo,Input normalization,Call ID: '  hfl-aar-2071  ',Same output as HFL-AAR-2071,,Waldean Nelson, passed,2026-10-20
+Task 3 - Priority cargo,Unknown call ID,Call ID: HFL-XXX-0000,Port call not found. Returns to menu.,,Waldean Nelson, passsed,2026-10-20
 Task 5,Reject non-integer text,"Enter abc at the month prompt","Print Error - Enter a month from 1 to 12. and repeat only the month prompt","Exact error printed; only the month prompt repeated",Raydel Savón,Passed,2026-10-13
 Task 5,Reject zero month,"Enter 0 at the month prompt","Print Error - Enter a month from 1 to 12. and repeat only the month prompt","Exact error printed; only the month prompt repeated",Raydel Savón,Passed,2026-10-13
 Task 5,Reject negative month,"Enter -3 at the month prompt","Print Error - Enter a month from 1 to 12. and repeat only the month prompt","Exact error printed; only the month prompt repeated",Raydel Savón,Passed,2026-10-13
