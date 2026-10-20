@@ -48,11 +48,12 @@ Documentation:
 - Preserved the distinction between the existing dataset/DATA-DICTIONARY.md and the new variable dictionary.
 - Documented the Task 5 processing flow: input validation, data loading, record validation, month filtering, sorting, and formatted output.
 
-Status:
+Status: Task 5 functionality and the listed acceptance and edge-case tests have passed. Final team review, repository integration, and submission checks is also done.
 
-Task 5 functionality and the listed acceptance and edge-case tests have passed. Final team review, repository integration, and submission checks remain pending.
 
-**Contribution: Task 7 - Longest Stable Event Sequence**
+
+Contribution: Task 7 - Longest Stable Event Sequence
+----------------------------------------------------
 
 Implemented and tested the stable event-sequence analysis service, including:
 
@@ -65,7 +66,7 @@ Implemented and tested the stable event-sequence analysis service, including:
 - Returning the sequence length and its event codes in chronological order.
 - Handling unknown Call IDs, unavailable manifests, and selected data-loading errors without terminating the console.
 
-**Testing and quality assurance:**
+Testing and quality assurance:
 
 Verified function-level tests covering repeated events, the official assignment example, equal-length sequences, empty input, single-event input, identical events, unique events, and previous occurrences outside the current window.
 
@@ -73,16 +74,15 @@ Verified integration and console tests covering manifest retrieval, successful p
 
 Simulated `FileNotFoundError` exceptions for the port-call and manifest loaders without modifying the dataset. Results were recorded in `test-ledger.csv`.
 
-**Architecture:**
+Architecture:
 
 - `code/main.py`: User interaction, port-call selection, error handling, and formatted output.
 - `code/data_access.py`: Existing port-call and manifest loaders.
 - `code/operations.py`: Existing manifest lookup and identifier consistency check.
 - `code/text_tools.py`: Longest stable-sequence algorithm.
 
-**Status:**
+**Status: Task 7 implementation and the listed tests have passed. Final documentation review, team integration, and submission checks are also done.
 
-Task 7 implementation and the listed tests have passed. Final documentation review, team integration, and submission checks remain pending.
 ---------------------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------
 
