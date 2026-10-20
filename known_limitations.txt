@@ -1,0 +1,93 @@
+- The file ends mid-bullet — line 292 is a dangling - ** with no closing text and no trailing newline. It needs completing or removing.
+- I excluded findings your readme already documents (Task 3 assumes optional classification fields exist, Uneven top-level loader recovery, Task 8 does not validate input thoroughly, Incident validation is incomplete, A missing JSON directory looks empty, Task 2 uses the wrong unavailable-manifest message, Write robustness differs by output type) so the list doesn't repeat itself.
+Group A — entries describing when the app crashes
+- **A closed input stream ends the console with a traceback.** Every prompt
+  calls `input()` directly, so an end-of-file condition (a piped session that
+  runs out of input, or Ctrl-D) raises `EOFError` and stops the program with
+  a full stack trace instead of returning to the menu. Ctrl-C raises
+  `KeyboardInterrupt` with the same result.
+- **Task 4 assumes every shipment field is a non-empty string.** The profile
+  builder calls `.strip()` on `customer` and `priority` and joins the
+  `destination` values as text, so a null or numeric value in any of them
+  raises `AttributeError` or `TypeError` and stops the service. The handler
+  in `main.py` covers `ValueError` but not those two exception types.
+- **Task 2 and Task 8 assume numeric shipment and weather fields.** The
+  manifest report adds `weight_kg` to a running total and the forecast
+  builder converts each cell with `float()`, so a numeric string or a null
+  value raises `TypeError` instead of being reported as a malformed record.
+- **Task 8 parses dates with two different rules.** `select_upcoming_calls()`
+  uses the permissive `date.fromisoformat()`, which accepts basic ISO forms
+  such as `20261018`, while the report loop calls the strict
+  `parse_reference_date()` outside the service's `try` block. A call stored
+  in that format therefore raises an uncaught `ValueError`.
+- **An unreadable source file stops the shared JSON loader.** The loader
+  catches `json.JSONDecodeError` and `FileNotFoundError` only, so a file that
+  is not valid UTF-8 raises `UnicodeDecodeError` and escapes to the caller.
+  Tasks 1, 3 and 6 end the console; the other services survive only because
+  that exception happens to be a subclass of `ValueError`.
+- **A business identifier that is not a string stops the JSON loader.** The
+  identifier is used directly as a dictionary key, so a JSON array or object
+  in the `vessel_id`, `call_id` or `incident_id` field raises `TypeError:
+  unhashable type`. Tasks 1, 3, 6 and 9 end the console; the remaining
+  services either do not read that file or already catch `TypeError`.
+- **An incident report that is not text stops Tasks 6 and 9.**
+  `sanitize_text()` and `normalize_words()` both call string methods on the
+  report body, so a numeric `report` value raises `TypeError`. A numeric
+  `title` is accepted by the loader but then breaks the incident sort and
+  the search result display.
+- **Task 3 cannot print its specified unavailable-manifest message.** The
+  service loads its data without an exception handler and never emits
+  `Manifest unavailable.`, so a missing or malformed manifest ends in a
+  traceback instead of the required message.
+Group B — entries describing failures that are silent rather than fatal
+- **A manifest whose `shipment_ids` is not a list is not detected.** The
+  value is iterated as it is stored, so a string is split into individual
+  characters and each character is printed as a separate shipment line, and
+  the declared count reports the number of characters rather than shipments.
+- **Incident identifiers are used to build output file names unchecked.**
+  `write_sanitized_report()` joins the identifier straight into the output
+  path, so an identifier that contains `../` writes the sanitized report
+  outside `exports/sanitized/`.
+- **Numeric prompts accept values that look like other values.** `int()`
+  accepts an underscore separator, so `1_0` is read as `10` and closes the
+  console from the menu, and it is accepted as month 10 by the Task 5
+  prompt. `int()` also accepts non-ASCII digits, so `٣` is read as `3`.
+- **A UTF-8 byte-order mark makes a CSV file unusable.** The CSV reader
+  requires an exact header match, so a marked header is reported as missing
+  its first column. The same check rejects a marked customer-profile export
+  and then blocks every later Task 4 run with that file in place.
+- **Weather values are converted but never range-checked.** `float()` accepts
+  `nan`, `inf` and negative readings. A `nan` wind value makes every
+  threshold comparison false, so the call is reported under a normal operating
+  plan, and a negative or infinite value is used as a real measurement.
+- **Date text is accepted and rejected inconsistently across services.** The
+  month service strips surrounding spaces from an arrival date before it
+  parses it, while the manifest and weather services do not, and only the
+  strict parser rejects the basic ISO form that the permissive one accepts.
+- **Cargo classification and the customer profile disagree about `priority`.**
+  The classifier compares the value with `EXPRESS` exactly, while the
+  profile builder upper-cases it first, so a lower-case `express` is counted
+  as an express shipment in Task 4 and classified as standard handling in
+  Task 3.
+- **Duplicate identifiers inside a source file are not detected.** A shipment
+  listed twice in one manifest is counted and weighed twice, and two rows in
+  `port_calls.csv` that share a `call_id` are both reported.
+- **The incident cache is not invalidated when a source file is removed.**
+  Cache freshness is decided by comparing modification times, so a report
+  file that is deleted after the cache was written leaves the cache accepted
+  and the search keeps returning that incident.
+- **The JSON loader accepts values the data model does not describe.** The
+  standard `json` module accepts `NaN` and `Infinity`, so a capacity or a
+  weight can be a non-finite number, and it keeps the last of two keys that
+  share a name. A null or empty identifier is also accepted as a record key.
+- **Task 3 prints a line for a shipment it cannot resolve.** The service
+  writes `Shipment_id not found` for a manifest entry with no matching
+  shipment file, although the task guide asks for resolved shipment records
+  only and does not define a message for this case.
+Notes on placement
+- Insert Group A immediately after the existing Uneven top-level loader recovery bullet, since they describe the same failure family with different causes.
+- Insert Group B after Write robustness differs by output type, before Interactive interface only.
+- The dangling - ** at line 292 should be deleted — it is a truncated entry with no closing ** and no newline at EOF. Alternatively it can be repurposed as the first of the Group A entries if you prefer a smaller diff.
+One caveat on the wording
+Task 3 assumes optional classification fields exist already covers the KeyError: 'hazardous' crash, so I did not repeat it. The new Task 3 cannot print its specified unavailable-manifest message entry covers a different defect — the unreachable message — which the readme does not currently mention.
+I'm in plan mode, so I haven't written this to readme.txt (the write tool is also restricted to the plan directory). Switch to build mode and I'll apply it, including fixing the dangling - ** at EOF and confirming git diff shows only the readme.txt change. If you'd prefer a smaller subset — just the Group A crash entries, say — tell me which and I'll cut it down before applying.
