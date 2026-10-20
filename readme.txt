@@ -131,7 +131,7 @@ Testing:
 
 - Menu: valid choices, text input, 0, 11 and empty input.
 - Vessels: malformed JSON file, missing required field, mixed valid and invalid files.
-- Classification: each rule alone, rule order when several conditions apply, missing boolean flags.
+- Classification: each rule alone, rule order when several conditions apply.
 - Calls: known call ID, unknown call ID, missing manifest.
 - Results were recorded in test-ledger.csv.
 ---------------------------------------------------------------------------------------------------------------------
@@ -289,4 +289,4 @@ implementation limitations, not intentional data cases:
   and writes multiple outputs, but its error messages do not always indicate which specific step failed.
 - **Task 8 does not validate input thoroughly.** It assumes that all required fields are 
   present and correctly formatted, which can lead to unexpected errors if the input data is incomplete or malformed.
-- **
+- **Task 3 Shipments missing the optional hazardous or temperature_controlled field cause a KeyError instead of being treated as false.
