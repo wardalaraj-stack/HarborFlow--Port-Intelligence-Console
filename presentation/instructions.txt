@@ -28,19 +28,29 @@ Both assignments require every group member to understand and be able to explain
 
 Prepare the following:
 
-Introduce your group and design briefly. Explain how you organised the programs into functions and, where relevant, 
-modules. Describe each member’s concrete contribution.
+Introduce your group and design briefly. 
+
+Explain how you organised the programs into functions and, where relevant, 
+modules. 
+
+Describe each member’s concrete contribution.
+
 Demonstrate one representative feature from each assignment. Run the programs through their menus and show the 
 resulting output. Choose examples that let you explain meaningful logic rather than simply displaying the menu.
+
 Show one boundary or error-handling case. Explain the expected behavior, demonstrate what happens, and show the 
 corresponding test evidence in your test ledger.
+
 Be ready to explain the code. Each member should be able to trace input through validation, processing and output, 
 including features initially written by another member.
+
 For Assignment 1, be prepared to explain your use of functions, arguments, return values, conditions, loops and lists. 
 You should also understand input validation, boundary cases and how shared calculations are reused.
 
 For Assignment 2, be prepared to explain how you load and validate JSON/CSV data, connect records using identifiers, 
-handle missing or malformed records, and create persistent outputs. You should also be able to explain the regex 
+handle missing or malformed records, and create persistent outputs. 
+
+You should also be able to explain the regex 
 transformations, sliding-window algorithm and cached search index.
 
  
